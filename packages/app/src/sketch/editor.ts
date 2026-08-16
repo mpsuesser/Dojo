@@ -7,7 +7,6 @@ import { createRoot, type Root } from 'react-dom/client'
 import { getAssetUrlsByImport } from '@tldraw/assets/imports.vite'
 import type {
   Editor,
-  TLDefaultDashStyle,
   TLShape,
   TLUiComponents,
 } from 'tldraw'
@@ -43,7 +42,6 @@ export type SketchEditor = Readonly<{
   api: Pick<
     typeof import('tldraw'),
     | 'DefaultColorStyle'
-    | 'DefaultDashStyle'
     | 'GeoShapeGeoStyle'
     | 'Tldraw'
   >
@@ -225,21 +223,6 @@ export const clear = (handle: SketchEditor): Effect.Effect<void, EditorActionErr
       handle.editor.deleteShapes([...handle.editor.getCurrentPageShapeIds()])
       handle.activeMode.current = 'draw'
       setEditorMode(handle, 'draw')
-    },
-    catch: cause => new EditorActionError({ reason: errorReason(cause) }),
-  })
-
-export const toggleSelectedDash = (
-  handle: SketchEditor,
-): Effect.Effect<void, EditorActionError> =>
-  Effect.try({
-    try: () => {
-      if (handle.editor.getSelectedShapeIds().length === 0) return
-      const current = handle.editor
-        .getSharedStyles()
-        .getAsKnownValue(handle.api.DefaultDashStyle)
-      const next: TLDefaultDashStyle = current === 'dashed' ? 'solid' : 'dashed'
-      handle.editor.setStyleForSelectedShapes(handle.api.DefaultDashStyle, next)
     },
     catch: cause => new EditorActionError({ reason: errorReason(cause) }),
   })

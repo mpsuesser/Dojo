@@ -30,6 +30,7 @@ describe('Dojo view', () => {
       { update, view },
       given({ route: SketchRoute(), protocol: 'https:', sketch: Sketch.init() }),
       expect(selector('[data-testid="sketch-workspace"]')).toExist(),
+      expect(selector('[data-testid="sketch-art"]')).toExist(),
       expect(selector('[data-testid="sketch-editor"]')).toExist(),
       expect(role('button', { name: 'Copy image' })).toExist(),
       expect(role('toolbar', { name: 'Drawing tools' })).toExist(),

@@ -9,7 +9,15 @@ import * as Submodel from 'foldkit/submodel'
 import type * as Update from 'foldkit/update'
 import { Dialog } from '@foldkit/ui'
 
+import sketchArtUrl from '../../../../docs/generated-concept-art/02-hall-of-form.png'
 import * as EditorAdapter from './editor.ts'
+import circleIconUrl from './icons/circle.svg'
+import drawIconUrl from './icons/draw.svg'
+import eraseIconUrl from './icons/erase.svg'
+import rectangleIconUrl from './icons/rectangle.svg'
+import selectIconUrl from './icons/select.svg'
+import squareIconUrl from './icons/square.svg'
+import textIconUrl from './icons/text.svg'
 
 export const SketchMode = Schema.Literals([
   'draw',
@@ -43,7 +51,6 @@ const Shortcut = Schema.Literals([
   'Select',
   'PreviousColor',
   'NextColor',
-  'ToggleDash',
   'CopyImage',
 ])
 
@@ -79,7 +86,6 @@ export const GotClearDialogMessage = m('GotClearDialogMessage', {
 export const CompletedApplyEditorMode = m('CompletedApplyEditorMode')
 export const CompletedApplyEditorColor = m('CompletedApplyEditorColor')
 export const CompletedClearEditor = m('CompletedClearEditor')
-export const CompletedToggleSelectedDash = m('CompletedToggleSelectedDash')
 export const SucceededCopyEditorImage = m('SucceededCopyEditorImage')
 export const ElapsedCopyFeedback = m('ElapsedCopyFeedback')
 export const FailedEditorAction = m('FailedEditorAction', { reason: Schema.String })
@@ -100,7 +106,6 @@ export const Message = Schema.Union([
   CompletedApplyEditorMode,
   CompletedApplyEditorColor,
   CompletedClearEditor,
-  CompletedToggleSelectedDash,
   SucceededCopyEditorImage,
   ElapsedCopyFeedback,
   FailedEditorAction,
@@ -168,16 +173,6 @@ const ClearEditor = Command.define('ClearEditor', {
   messages: [CompletedClearEditor, FailedEditorAction],
   execute: runEditorAction(EditorAdapter.clear).pipe(
     Effect.as(CompletedClearEditor()),
-    Effect.catchTag('EditorActionError', ({ reason }) =>
-      Effect.succeed(FailedEditorAction({ reason })),
-    ),
-  ),
-})
-
-const ToggleSelectedDash = Command.define('ToggleSelectedDash', {
-  messages: [CompletedToggleSelectedDash, FailedEditorAction],
-  execute: runEditorAction(EditorAdapter.toggleSelectedDash).pipe(
-    Effect.as(CompletedToggleSelectedDash()),
     Effect.catchTag('EditorActionError', ({ reason }) =>
       Effect.succeed(FailedEditorAction({ reason })),
     ),
@@ -271,11 +266,6 @@ const handleShortcut = (
     M.when('NextColor', () =>
       selectColor(model, shiftedColor(model.activeColor, 1)),
     ),
-    M.when('ToggleDash', () => [
-      model,
-      [ToggleSelectedDash()],
-      Option.none(),
-    ]),
     M.when('CopyImage', () =>
       model.shapeCount === 0 || model.copyState === 'Copying'
         ? [model, [], Option.none()]
@@ -365,7 +355,6 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
         Option.none(),
       ],
-      CompletedToggleSelectedDash: () => [model, [], Option.none()],
       SucceededCopyEditorImage: () => [
         evo(model, {
           copyState: () => 'Idle',
@@ -468,7 +457,6 @@ const shortcutFromKeyboard = (event: KeyboardEvent): Option.Option<Message> => {
               M.when('KeyT', () => Option.some('Text')),
               M.when('KeyE', () => Option.some('Erase')),
               M.when('KeyW', () => Option.some('Select')),
-              M.when('Minus', () => Option.some('ToggleDash')),
               M.orElse(() => Option.none()),
             )
 
@@ -505,14 +493,16 @@ export const subscriptions = Subscription.make<Model, Message, EditorService>()(
   }),
 )
 
-const modes: ReadonlyArray<Readonly<{ mode: SketchMode; label: string }>> = [
-  { mode: 'draw', label: 'Draw' },
-  { mode: 'square', label: 'Square' },
-  { mode: 'circle', label: 'Circle' },
-  { mode: 'rectangle', label: 'Rectangle' },
-  { mode: 'text', label: 'Text' },
-  { mode: 'erase', label: 'Erase' },
-  { mode: 'select', label: 'Select' },
+const modes: ReadonlyArray<
+  Readonly<{ mode: SketchMode; label: string; key: string; iconUrl: string }>
+> = [
+  { mode: 'draw', label: 'Draw', key: 'D', iconUrl: drawIconUrl },
+  { mode: 'square', label: 'Square', key: 'S', iconUrl: squareIconUrl },
+  { mode: 'circle', label: 'Circle', key: 'C', iconUrl: circleIconUrl },
+  { mode: 'rectangle', label: 'Rectangle', key: 'R', iconUrl: rectangleIconUrl },
+  { mode: 'text', label: 'Text', key: 'T', iconUrl: textIconUrl },
+  { mode: 'erase', label: 'Erase', key: 'E', iconUrl: eraseIconUrl },
+  { mode: 'select', label: 'Select', key: 'W', iconUrl: selectIconUrl },
 ]
 
 const colorLabels: Readonly<Record<SketchColor, string>> = {
@@ -606,73 +596,119 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
   return h.main(
     [h.Class('sketch-shell'), h.Attribute('data-testid', 'sketch-workspace')],
     [
+      h.img([
+        h.Src(sketchArtUrl),
+        h.Alt('A sunlit wooden training hall prepared for the art of form'),
+        h.Class('sketch-backsplash'),
+        h.Attribute('data-testid', 'sketch-art'),
+      ]),
+      h.div([h.Class('sketch-atmosphere')]),
       h.header(
-        [h.Class('sketch-toolbar')],
+        [h.Class('sketch-masthead')],
         [
           h.div(
-            [h.Class('sketch-actions')],
+            [h.Class('sketch-title-lockup')],
             [
-              button('Clear', 'sketch-button sketch-button-secondary', !isReady || isCopying || model.shapeCount === 0, ClickedClear(), h),
-              button('Close', 'sketch-button sketch-button-secondary', isCopying, ClickedClose(), h),
-              button(copyLabel, 'sketch-button sketch-button-primary', !isReady || isCopying || model.shapeCount === 0, ClickedCopyImage(), h),
+              h.span([h.Class('sketch-kicker')], ['Dojo / Hall of Form']),
+              h.h1([h.Class('sketch-title')], ['Sketch']),
             ],
-          ),
-          h.div(
-            [h.Class('sketch-tools'), h.Role('toolbar'), h.AriaLabel('Drawing tools')],
-            Arr.map(modes, ({ mode, label }) =>
-              h.button(
-                [
-                  h.Type('button'),
-                  h.Class('sketch-tool'),
-                  h.AriaPressed(`${model.activeMode === mode}`),
-                  h.Disabled(!isReady || isCopying),
-                  h.OnClick(SelectedMode({ mode })),
-                ],
-                [label],
-              ),
-            ),
           ),
         ],
       ),
-      h.section(
-        [h.Class('sketch-stage'), h.AriaLabel('Drawing canvas')],
+      h.div(
+        [h.Class('sketch-workbench')],
         [
-          h.div([
-            h.Id('sketch-editor-host'),
-            h.Class('sketch-editor-host'),
-            h.Attribute('data-testid', 'sketch-editor'),
-          ]),
-          model.editorState === 'Acquiring'
-            ? h.p([h.Class('sketch-loading'), h.Role('status')], ['Preparing canvas...'])
-            : null,
-          model.editorState === 'Failed'
-            ? h.p([h.Class('sketch-loading sketch-error'), h.Role('alert')], [
-                Option.getOrElse(model.feedback, () => 'The canvas could not be loaded.'),
-              ])
-            : null,
+          h.aside(
+            [h.Class('sketch-tool-panel')],
+            [
+              h.div(
+                [h.Class('sketch-panel-heading')],
+                [
+                  h.div([], [
+                    h.span([h.Class('sketch-panel-kicker')], ['Instruments']),
+                  ]),
+                ],
+              ),
+              h.div(
+                [h.Class('sketch-tools'), h.Role('toolbar'), h.AriaLabel('Drawing tools')],
+                Arr.map(modes, ({ mode, label, key, iconUrl }) =>
+                  h.button(
+                    [
+                      h.Type('button'),
+                      h.Class('sketch-tool'),
+                      h.AriaLabel(label),
+                      h.AriaPressed(`${model.activeMode === mode}`),
+                      h.Disabled(!isReady || isCopying),
+                      h.OnClick(SelectedMode({ mode })),
+                    ],
+                    [
+                      h.kbd([h.Class('sketch-tool-key')], [key]),
+                      h.span([h.Class('sketch-tool-label')], [label]),
+                      h.img([
+                        h.Src(iconUrl),
+                        h.Alt(''),
+                        h.Class('sketch-tool-icon'),
+                      ]),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          h.section(
+            [h.Class('sketch-stage'), h.AriaLabel('Drawing canvas')],
+            [
+              h.div(
+                [h.Class('sketch-canvas-frame')],
+                [
+                  h.div([
+                    h.Id('sketch-editor-host'),
+                    h.Class('sketch-editor-host'),
+                    h.Attribute('data-testid', 'sketch-editor'),
+                  ]),
+                ],
+              ),
+              model.editorState === 'Acquiring'
+                ? h.p([h.Class('sketch-loading'), h.Role('status')], ['Preparing canvas...'])
+                : null,
+              model.editorState === 'Failed'
+                ? h.p([h.Class('sketch-loading sketch-error'), h.Role('alert')], [
+                    Option.getOrElse(model.feedback, () => 'The canvas could not be loaded.'),
+                  ])
+                : null,
+            ],
+          ),
         ],
       ),
       h.footer(
         [h.Class('sketch-palette'), h.AriaLabel('Drawing colors')],
-        Arr.map(colors, color =>
-          h.button(
-            [
-              h.Type('button'),
-              h.Class('sketch-swatch'),
-              h.Style({ backgroundColor: EditorAdapter.colorSwatches[color] }),
-              h.AriaLabel(`Use ${colorLabels[color]}`),
-              h.AriaPressed(`${model.activeColor === color}`),
-              h.Disabled(!isReady || isCopying),
-              h.OnClick(SelectedColor({ color })),
-            ],
-          ),
-        ),
-      ),
-      h.aside(
-        [h.Class('sketch-hotkeys'), h.AriaLabel('Keyboard shortcuts')],
         [
-          'Draw D', 'Square S', 'Circle C', 'Rectangle R', 'Text T',
-          'Erase E', 'Select W', 'Color Shift A/D', 'Dash -', 'Copy Cmd/Ctrl Enter',
+          h.span([h.Class('sketch-palette-label')], ['Ink']),
+          h.div(
+            [h.Class('sketch-swatches')],
+            Arr.map(colors, color =>
+              h.button(
+                [
+                  h.Type('button'),
+                  h.Class('sketch-swatch'),
+                  h.Style({ backgroundColor: EditorAdapter.colorSwatches[color] }),
+                  h.AriaLabel(`Use ${colorLabels[color]}`),
+                  h.AriaPressed(`${model.activeColor === color}`),
+                  h.Disabled(!isReady || isCopying),
+                  h.OnClick(SelectedColor({ color })),
+                ],
+              ),
+            ),
+          ),
+          h.span([h.Class('sketch-palette-hint')], ['Shift A / D']),
+        ],
+      ),
+      h.div(
+        [h.Class('sketch-actions')],
+        [
+          button('Close', 'sketch-button sketch-button-quiet', isCopying, ClickedClose(), h),
+          button('Clear', 'sketch-button sketch-button-quiet', !isReady || isCopying || model.shapeCount === 0, ClickedClear(), h),
+          button(copyLabel, 'sketch-button sketch-button-primary', !isReady || isCopying || model.shapeCount === 0, ClickedCopyImage(), h),
         ],
       ),
       clearDialog(model, h),
