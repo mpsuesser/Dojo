@@ -1,4 +1,5 @@
 node_modules/
+.alchemy/
 dist/
 *.tsbuildinfo
 .DS_Store

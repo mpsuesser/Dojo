@@ -37,6 +37,7 @@
   "scripts": {
     "dev": "bun run scripts/dev.ts",
     "dev:web": "bun run --cwd packages/app dev",
+    "deploy": "alchemy deploy --stage prod",
     "build": "bun run --cwd packages/app build && bun run --cwd packages/desktop build",
     "package": "bun run build && bun run --cwd packages/desktop package",
     "test": "bun run --cwd packages/shared test && bun run --cwd packages/app test",
@@ -55,6 +56,7 @@
     "@playwright/test": "1.62.1",
     "@types/bun": "catalog:dev",
     "@types/node": "catalog:dev",
+    "alchemy": "2.0.0-beta.72",
     "chrome-devtools-mcp": "1.7.0",
     "oxlint": "catalog:dev",
     "oxlint-tsgolint": "catalog:dev",

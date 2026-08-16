@@ -11,5 +11,5 @@
     "target": "ESNext",
     "types": ["bun"]
   },
-  "include": ["./dev.ts"]
+  "include": ["./dev.ts", "../alchemy.run.ts"]
 }
