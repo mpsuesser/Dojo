@@ -22,13 +22,14 @@ const validatedDevelopmentRendererUrl = Effect.runSync(
   }),
 )
 
-const { developmentRendererOrigin, rendererPath } = Effect.runSync(
+const { appIconPath, developmentRendererOrigin, rendererPath } = Effect.runSync(
   Effect.gen(function* () {
     const path = yield* Path.Path
     const applicationDirectory = path.dirname(
       yield* path.fromFileUrl(new URL(import.meta.url)),
     )
     return {
+      appIconPath: path.resolve(applicationDirectory, '../assets/icon.png'),
       developmentRendererOrigin: Option.map(
         validatedDevelopmentRendererUrl,
         url => url.origin,
@@ -49,6 +50,7 @@ const isAllowedNavigation = (url: string): boolean =>
 const createWindow = (): BrowserWindow => {
   const window = new BrowserWindow({
     title: 'Dojo',
+    icon: appIconPath,
     width: 1440,
     height: 900,
     minWidth: 800,
@@ -80,11 +82,15 @@ const createWindow = (): BrowserWindow => {
   return window
 }
 
+app.setName('Dojo')
+app.setAboutPanelOptions({ applicationName: 'Dojo' })
 const hasSingleInstanceLock = app.requestSingleInstanceLock()
 if (!hasSingleInstanceLock) {
   app.quit()
 } else {
   void app.whenReady().then(() => {
+    if (process.platform === 'darwin') app.dock?.setIcon(appIconPath)
+
     session.defaultSession.setPermissionRequestHandler(
       (_webContents, _permission, callback) => {
         callback(false)
