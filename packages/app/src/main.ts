@@ -264,7 +264,13 @@ const routeDocument = M.type<AppRoute>().pipe(
 
 export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
   const document = routeDocument(model.route)
-  return { title: document.title, body: document.bodyView(model, h) }
+  return {
+    title: document.title,
+    body: h.div(
+      [h.Class('scene-stage'), h.Attribute('data-testid', 'scene-stage')],
+      [document.bodyView(model, h)],
+    ),
+  }
 }
 
 const sketchModel = (model: Model): Option.Option<Sketch.Model> =>

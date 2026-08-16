@@ -11,6 +11,7 @@ import { Dialog } from '@foldkit/ui'
 
 import sketchArtUrl from '../../../../docs/generated-concept-art/02-hall-of-form.png'
 import * as EditorAdapter from './editor.ts'
+import backIconUrl from './icons/back.svg'
 import circleIconUrl from './icons/circle.svg'
 import drawIconUrl from './icons/draw.svg'
 import eraseIconUrl from './icons/erase.svg'
@@ -609,7 +610,30 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
           h.div(
             [h.Class('sketch-title-lockup')],
             [
-              h.span([h.Class('sketch-kicker')], ['Dojo / Hall of Form']),
+              h.button([
+                h.Type('button'),
+                h.Class('sketch-home-button'),
+                h.AriaLabel('Return to Dojo'),
+                h.Disabled(isCopying),
+                h.OnClick(ClickedClose()),
+              ]),
+              h.span(
+                [h.Class('sketch-kicker')],
+                [
+                  h.span(
+                    [h.Class('sketch-home-mark')],
+                    [
+                      h.span([h.Class('sketch-home-label')], ['Dojo']),
+                      h.img([
+                        h.Src(backIconUrl),
+                        h.Alt(''),
+                        h.Class('sketch-home-icon'),
+                      ]),
+                    ],
+                  ),
+                  h.span([], [' / Hall of Form']),
+                ],
+              ),
               h.h1([h.Class('sketch-title')], ['Sketch']),
             ],
           ),
@@ -706,7 +730,6 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
       h.div(
         [h.Class('sketch-actions')],
         [
-          button('Close', 'sketch-button sketch-button-quiet', isCopying, ClickedClose(), h),
           button('Clear', 'sketch-button sketch-button-quiet', !isReady || isCopying || model.shapeCount === 0, ClickedClear(), h),
           button(copyLabel, 'sketch-button sketch-button-primary', !isReady || isCopying || model.shapeCount === 0, ClickedCopyImage(), h),
         ],

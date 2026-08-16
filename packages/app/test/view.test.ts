@@ -16,6 +16,7 @@ describe('Dojo view', () => {
     scene(
       { update, view },
       given({ route: HomeRoute(), protocol: 'https:', sketch: Sketch.init() }),
+      expect(selector('[data-testid="scene-stage"]')).toExist(),
       expect(selector('[data-testid="dojo-art"]')).toExist(),
       expect(role('heading', { name: 'Dojo' })).toExist(),
       expect(role('link', { name: 'Sketch' })).toExist(),
@@ -32,6 +33,7 @@ describe('Dojo view', () => {
       expect(selector('[data-testid="sketch-workspace"]')).toExist(),
       expect(selector('[data-testid="sketch-art"]')).toExist(),
       expect(selector('[data-testid="sketch-editor"]')).toExist(),
+      expect(role('button', { name: 'Return to Dojo' })).toExist(),
       expect(role('button', { name: 'Copy image' })).toExist(),
       expect(role('toolbar', { name: 'Drawing tools' })).toExist(),
       expect(role('navigation')).not.toExist(),

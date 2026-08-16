@@ -1,5 +1,18 @@
 import { expect, test } from '@playwright/test'
 
+test('pages preserve the canonical scene composition', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 1200 })
+  await page.goto('/sketch')
+
+  const stage = await page.getByTestId('scene-stage').boundingBox()
+  expect(stage).not.toBeNull()
+  if (!stage) return
+  expect(stage.width).toBeCloseTo(900, 1)
+  expect(stage.height).toBeCloseTo(540, 1)
+  expect(stage.x).toBeCloseTo(0, 1)
+  expect(stage.y).toBeCloseTo(330, 1)
+})
+
 test('the main menu navigates between Foldkit routes', async ({ page }) => {
   await page.goto('/')
 
@@ -81,7 +94,7 @@ test('the sketch persists drawings and clears them through the Foldkit dialog', 
   await page.getByRole('button', { name: 'Clear canvas' }).click()
   await expect(page.getByRole('button', { name: 'Clear' })).toBeDisabled()
 
-  await page.getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: 'Return to Dojo' }).click()
   await expect(page).toHaveURL(/\/$/)
   await expect(page.getByRole('heading', { name: 'Dojo' })).toBeVisible()
 })
