@@ -1,0 +1,28 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@dojo/app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "preview": "vite preview --host 127.0.0.1",
+    "build": "vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json"
+  },
+  "dependencies": {
+    "@dojo/shared": "workspace:*",
+    "effect": "catalog:",
+    "foldkit": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:dev",
+    "@effect/vitest": "catalog:dev",
+    "@foldkit/vite-plugin": "catalog:dev",
+    "@types/node": "catalog:dev",
+    "typescript": "catalog:dev",
+    "vite": "catalog:dev",
+    "vite-plugin-pwa": "catalog:dev",
+    "vitest": "catalog:dev"
+  }
+}

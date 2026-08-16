@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "build",
+  "instructions": ["AGENTS.md"],
+  "plugins": [],
+  "mcp": {
+    "servers": {
+      "foldkit-devtools": {
+        "type": "local",
+        "command": ["./node_modules/.bin/foldkit-devtools-mcp"],
+        "environment": {
+          "FOLDKIT_DEVTOOLS_MCP_PORT": "{env:FOLDKIT_DEVTOOLS_MCP_PORT}"
+        }
+      },
+      "chrome-devtools": {
+        "type": "local",
+        "command": ["./node_modules/.bin/chrome-devtools-mcp", "--headless"]
+      }
+    }
+  },
+  "references": {
+    "electron-docs": {
+      "repository": "mpsuesser/scraped-docs-electron",
+      "branch": "main",
+      "description": "Full scraped documentation for Electron"
+    }
+  }
+}

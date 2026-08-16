@@ -1,0 +1,28 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@dojo/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "productName": "Dojo",
+  "description": "The Dojo desktop application.",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "rm -rf dist && bun build src/main.ts --outdir dist --target node --format esm --external electron",
+    "package": "electron-builder --config electron-builder.yml",
+    "start": "bun run build && electron .",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@dojo/shared": "workspace:*",
+    "@effect/platform-node": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:dev",
+    "@types/node": "catalog:dev",
+    "electron": "catalog:dev",
+    "electron-builder": "catalog:dev",
+    "typescript": "catalog:dev"
+  }
+}

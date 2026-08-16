@@ -1,0 +1,35 @@
+:root {
+  color-scheme: dark;
+  background: #071020;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+}
+
+.dojo-shell {
+  width: 100%;
+  height: 100%;
+  background: #071020;
+}
+
+.dojo-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
