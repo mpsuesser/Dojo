@@ -1,6 +1,7 @@
 :root {
   color-scheme: dark;
   background: #071020;
+  font-family: Georgia, 'Times New Roman', serif;
 }
 
 * {
@@ -18,18 +19,220 @@ body,
 
 body {
   overflow: hidden;
-}
-
-.dojo-shell {
-  width: 100%;
-  height: 100%;
   background: #071020;
 }
 
-.dojo-art {
+.dojo-shell,
+.splash-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #071020;
+  isolation: isolate;
+}
+
+.dojo-art,
+.splash-art {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
+}
+
+.menu-shade {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 17% 22%, rgb(17 27 63 / 16%) 0 20%, transparent 48%),
+    linear-gradient(90deg, rgb(2 6 18 / 82%) 0%, rgb(4 9 24 / 50%) 26%, transparent 52%),
+    linear-gradient(180deg, rgb(2 4 15 / 30%) 0%, transparent 38%);
+}
+
+.main-menu {
+  --ember: #d88a45;
+  --parchment: #f4e4c1;
+  position: absolute;
+  z-index: 2;
+  top: clamp(2.75rem, 8vh, 6.5rem);
+  left: clamp(2rem, 5.3vw, 5.75rem);
+  width: min(25rem, 36vw);
+  padding: 0.75rem 0 1rem 1.45rem;
+  filter: drop-shadow(0 1.1rem 1.4rem rgb(0 0 0 / 42%));
+}
+
+.main-menu::before {
+  position: absolute;
+  top: 2.85rem;
+  bottom: 1.4rem;
+  left: 0;
+  width: 1px;
+  content: '';
+  background: linear-gradient(transparent, #b76c36 15%, #81502d 82%, transparent);
+  box-shadow: 0 0 0.85rem rgb(224 124 54 / 32%);
+}
+
+.menu-title-rule {
+  width: 4.6rem;
+  height: 0.25rem;
+  margin: 0 0 0.8rem 0.1rem;
+  background: linear-gradient(90deg, var(--ember), rgb(177 88 42 / 18%));
+  clip-path: polygon(0 50%, 10% 0, 88% 0, 100% 50%, 88% 100%, 10% 100%);
+  box-shadow: 0 0 0.8rem rgb(218 116 52 / 38%);
+}
+
+.menu-title {
+  margin: 0 0 1.4rem;
+  color: var(--parchment);
+  font-size: clamp(3.3rem, 5.2vw, 5.6rem);
+  font-weight: 500;
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  text-shadow:
+    0 0.08em 0 #492b22,
+    0 0.16em 0.35em rgb(0 0 0 / 72%),
+    0 0 1em rgb(185 96 49 / 15%);
+}
+
+.menu-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.16rem;
+}
+
+.menu-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: min(21rem, 100%);
+  min-height: 3.15rem;
+  padding: 0.35rem 1.2rem 0.35rem 2.1rem;
+  overflow: hidden;
+  color: #d9d9dc;
+  font-family: 'Palatino Linotype', Palatino, Georgia, serif;
+  font-size: clamp(1.15rem, 1.65vw, 1.65rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  text-decoration: none;
+  text-shadow: 0 0.12em 0.35em rgb(0 0 0 / 90%);
+  transition:
+    color 150ms ease,
+    padding-left 180ms ease,
+    letter-spacing 180ms ease;
+}
+
+.menu-link::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: '';
+  opacity: 0;
+  background: linear-gradient(90deg, rgb(104 36 29 / 92%), rgb(94 41 31 / 48%) 67%, transparent);
+  border-left: 2px solid #e19a53;
+  clip-path: polygon(0 0, 90% 0, 100% 50%, 90% 100%, 0 100%, 4% 50%);
+  transform: translateX(-0.7rem);
+  transition:
+    opacity 150ms ease,
+    transform 180ms ease;
+}
+
+.menu-link::after {
+  position: absolute;
+  left: 0.72rem;
+  width: 0.46rem;
+  height: 0.46rem;
+  content: '';
+  opacity: 0.52;
+  background: #b8733c;
+  border: 1px solid #e4ad70;
+  transform: rotate(45deg);
+  transition:
+    opacity 150ms ease,
+    box-shadow 150ms ease,
+    transform 180ms ease;
+}
+
+.menu-link:hover,
+.menu-link:focus-visible {
+  padding-left: 2.5rem;
+  color: #fff1d1;
+  letter-spacing: 0.075em;
+  outline: none;
+}
+
+.menu-link:hover::before,
+.menu-link:focus-visible::before {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.menu-link:hover::after,
+.menu-link:focus-visible::after {
+  opacity: 1;
+  box-shadow: 0 0 0.8rem #ef9847;
+  transform: rotate(225deg);
+}
+
+.menu-link-settings {
+  margin-top: 1.05rem;
+}
+
+@media (max-width: 720px) {
+  .dojo-art {
+    object-position: 59% center;
+  }
+
+  .menu-shade {
+    background:
+      linear-gradient(90deg, rgb(2 6 18 / 88%) 0%, rgb(4 9 24 / 57%) 64%, transparent 100%),
+      linear-gradient(180deg, rgb(2 4 15 / 35%) 0%, transparent 45%);
+  }
+
+  .main-menu {
+    top: clamp(2rem, 7vh, 4rem);
+    left: 1.2rem;
+    width: min(20rem, calc(100vw - 2.4rem));
+    padding-left: 1rem;
+  }
+
+  .menu-title {
+    margin-bottom: 1.15rem;
+    font-size: clamp(3.2rem, 17vw, 4.7rem);
+  }
+
+  .menu-link {
+    min-height: 3rem;
+    font-size: clamp(1.1rem, 6vw, 1.45rem);
+  }
+}
+
+@media (max-height: 590px) {
+  .main-menu {
+    top: 1.4rem;
+  }
+
+  .menu-title {
+    margin-bottom: 0.75rem;
+    font-size: 3.2rem;
+  }
+
+  .menu-link {
+    min-height: 2.55rem;
+  }
+
+  .menu-link-settings {
+    margin-top: 0.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-link,
+  .menu-link::before,
+  .menu-link::after {
+    transition: none;
+  }
 }
