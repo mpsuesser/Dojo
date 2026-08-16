@@ -236,3 +236,273 @@ body {
     transition: none;
   }
 }
+
+.sketch-shell {
+  --sketch-ink: #18191b;
+  --sketch-panel: #242629;
+  --sketch-line: rgb(255 255 255 / 12%);
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: clamp(0.75rem, 1.8vw, 1.5rem);
+  color: #f6f4ef;
+  background:
+    radial-gradient(circle at 50% -20%, rgb(66 99 235 / 15%), transparent 42rem),
+    var(--sketch-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.sketch-toolbar {
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem 1.25rem;
+  padding-bottom: clamp(0.75rem, 1.8vh, 1.25rem);
+}
+
+.sketch-actions,
+.sketch-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.sketch-button,
+.sketch-tool {
+  min-height: 2.35rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--sketch-line);
+  border-radius: 0.2rem;
+  color: inherit;
+  background: var(--sketch-panel);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  transition: border-color 130ms ease, background 130ms ease, transform 130ms ease;
+}
+
+.sketch-button:hover:not(:disabled),
+.sketch-tool:hover:not(:disabled) {
+  border-color: rgb(255 255 255 / 30%);
+  background: #303338;
+  transform: translateY(-1px);
+}
+
+.sketch-button:focus-visible,
+.sketch-tool:focus-visible,
+.sketch-swatch:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.sketch-button:disabled,
+.sketch-tool:disabled,
+.sketch-swatch:disabled {
+  cursor: wait;
+  opacity: 0.45;
+}
+
+.sketch-button-primary {
+  min-width: 8.6rem;
+  border-color: #5270e8;
+  background: #3658db;
+}
+
+.sketch-button-primary:hover:not(:disabled) {
+  background: #4263eb;
+}
+
+.sketch-button-danger {
+  border-color: #c84c4c;
+  background: #9f3232;
+}
+
+.sketch-tool[aria-pressed='true'] {
+  border-color: #7590ff;
+  color: #fff;
+  background: #344fc0;
+  box-shadow: inset 0 -2px 0 rgb(255 255 255 / 20%);
+}
+
+.sketch-stage {
+  position: relative;
+  display: grid;
+  min-height: 0;
+  place-items: center;
+}
+
+.sketch-editor-host {
+  position: relative;
+  width: min(62.5rem, calc(100vw - 2rem));
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 5 / 3;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1.2rem 3.5rem rgb(0 0 0 / 42%);
+}
+
+.sketch-editor-host .tl-container {
+  position: absolute;
+  inset: 0;
+}
+
+.sketch-loading {
+  position: absolute;
+  z-index: 1;
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgb(0 0 0 / 12%);
+  color: #484b52;
+  background: rgb(255 255 255 / 90%);
+  font-size: 0.8rem;
+}
+
+.sketch-error {
+  color: #8f2020;
+}
+
+.sketch-palette {
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 0.65rem;
+  padding-top: clamp(0.75rem, 1.8vh, 1.25rem);
+}
+
+.sketch-swatch {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgb(0 0 0 / 45%);
+  border-radius: 0.2rem;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 9%);
+  cursor: pointer;
+  transition: transform 130ms ease, box-shadow 130ms ease;
+}
+
+.sketch-swatch:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.sketch-swatch[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--sketch-ink), 0 0 0 4px #fff;
+}
+
+.sketch-hotkeys {
+  position: absolute;
+  top: 50%;
+  right: max(0.65rem, calc((100vw - 78rem) / 2));
+  display: grid;
+  width: 7.5rem;
+  gap: 0.45rem;
+  color: rgb(255 255 255 / 42%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.63rem;
+  line-height: 1.25;
+  transform: translateY(-50%);
+}
+
+.sketch-dialog-backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  display: grid;
+  padding: 1rem;
+  place-items: center;
+  background: rgb(0 0 0 / 70%);
+}
+
+.sketch-dialog-root {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  color: #f6f4ef;
+  background: transparent;
+}
+
+.sketch-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(25rem, 100%);
+  padding: 1.4rem;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 0.35rem;
+  background: #242629;
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 55%);
+}
+
+.sketch-dialog h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.15rem;
+}
+
+.sketch-dialog p {
+  margin: 0;
+  color: rgb(255 255 255 / 68%);
+  font-size: 0.87rem;
+}
+
+.sketch-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 79.99rem) {
+  .sketch-hotkeys {
+    display: none;
+  }
+}
+
+@media (max-width: 44rem) {
+  .sketch-shell {
+    padding: 0.65rem;
+  }
+
+  .sketch-toolbar {
+    align-content: start;
+    gap: 0.5rem;
+  }
+
+  .sketch-actions,
+  .sketch-tools {
+    width: 100%;
+  }
+
+  .sketch-actions .sketch-button,
+  .sketch-tool {
+    flex: 1 1 auto;
+  }
+
+  .sketch-tool {
+    min-height: 2rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .sketch-editor-host {
+    width: 100%;
+    aspect-ratio: auto;
+    height: 100%;
+  }
+
+  .sketch-palette {
+    padding-top: 0.75rem;
+  }
+}

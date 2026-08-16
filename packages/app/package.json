@@ -12,14 +12,21 @@
   },
   "dependencies": {
     "@dojo/shared": "workspace:*",
+    "@foldkit/ui": "0.145.0",
+    "@tldraw/assets": "5.3.1",
     "effect": "catalog:",
-    "foldkit": "catalog:"
+    "foldkit": "catalog:",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "tldraw": "5.3.1"
   },
   "devDependencies": {
     "@effect/language-service": "catalog:dev",
     "@effect/vitest": "catalog:dev",
     "@foldkit/vite-plugin": "catalog:dev",
     "@types/node": "catalog:dev",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
     "typescript": "catalog:dev",
     "vite": "catalog:dev",
     "vite-plugin-pwa": "catalog:dev",

@@ -11,6 +11,9 @@ const devToolsMcpPort = readPort('FOLDKIT_DEVTOOLS_MCP_PORT', 7781)
 
 export default defineConfig(({ command }) => ({
   base: './',
+  optimizeDeps: {
+    exclude: ['@tldraw/assets/imports.vite'],
+  },
   plugins: [
     {
       name: 'dojo-content-security-policy',

@@ -7,7 +7,8 @@ test('the main menu navigates between Foldkit routes', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Dojo' })).toBeVisible()
   await page.getByRole('link', { name: 'Sketch' }).click()
   await expect(page).toHaveURL(/\/sketch$/)
-  await expect(page.getByTestId('sketch-splash')).toBeVisible()
+  await expect(page.getByTestId('sketch-workspace')).toBeVisible()
+  await expect(page.getByTestId('sketch-editor')).toBeVisible()
 
   await page.goBack()
   await page.getByRole('link', { name: 'Interrogation' }).click()
@@ -35,4 +36,52 @@ test('the web app is installable as a PWA', async ({ browserName, page }) => {
     'Page.getInstallabilityErrors',
   )
   expect(installabilityErrors).toEqual([])
+})
+
+test('the sketch persists drawings and clears them through the Foldkit dialog', async ({
+  page,
+}) => {
+  await page.goto('/sketch')
+  await expect(page.getByRole('button', { name: 'Draw' })).toBeEnabled()
+
+  const editor = page.getByTestId('sketch-editor')
+  const bounds = await editor.boundingBox()
+  expect(bounds).not.toBeNull()
+  if (!bounds) return
+
+  await page.mouse.move(bounds.x + bounds.width * 0.3, bounds.y + bounds.height * 0.35)
+  await page.mouse.down()
+  await page.mouse.move(bounds.x + bounds.width * 0.65, bounds.y + bounds.height * 0.62, {
+    steps: 8,
+  })
+  await page.mouse.up()
+  await expect(page.getByRole('button', { name: 'Clear' })).toBeEnabled()
+  await page.waitForFunction(() => {
+    const sync = Reflect.get(window, 'tlsync')
+    return (
+      typeof sync === 'object' &&
+      sync !== null &&
+      Reflect.get(sync, 'scheduledPersistTimeout') === null &&
+      Reflect.get(sync, 'isPersisting') === false
+    )
+  })
+
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Draw' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Clear' })).toBeEnabled()
+
+  await page.getByRole('button', { name: 'Clear' }).click()
+  await expect(
+    page.getByRole('dialog', { name: 'Clear the current canvas?' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  await expect(page.getByRole('dialog')).not.toBeVisible()
+
+  await page.getByRole('button', { name: 'Clear' }).click()
+  await page.getByRole('button', { name: 'Clear canvas' }).click()
+  await expect(page.getByRole('button', { name: 'Clear' })).toBeDisabled()
+
+  await page.getByRole('button', { name: 'Close' }).click()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole('heading', { name: 'Dojo' })).toBeVisible()
 })

@@ -47,6 +47,9 @@ const isAllowedNavigation = (url: string): boolean =>
     onSome: origin => new URL(url).origin === origin,
   })
 
+const canWriteClipboard = (permission: string, url: string): boolean =>
+  permission === 'clipboard-sanitized-write' && isAllowedNavigation(url)
+
 const createWindow = (): BrowserWindow => {
   const window = new BrowserWindow({
     title: 'Dojo',
@@ -91,9 +94,14 @@ if (!hasSingleInstanceLock) {
   void app.whenReady().then(() => {
     if (process.platform === 'darwin') app.dock?.setIcon(appIconPath)
 
+    session.defaultSession.setPermissionCheckHandler(
+      (webContents, permission) =>
+        webContents !== null &&
+        canWriteClipboard(permission, webContents.getURL()),
+    )
     session.defaultSession.setPermissionRequestHandler(
-      (_webContents, _permission, callback) => {
-        callback(false)
+      (webContents, permission, callback) => {
+        callback(canWriteClipboard(permission, webContents.getURL()))
       },
     )
     createWindow()
