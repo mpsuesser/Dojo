@@ -23,6 +23,7 @@
     "@types/node": "catalog:dev",
     "electron": "catalog:dev",
     "electron-builder": "catalog:dev",
+    "electron-builder-squirrel-windows": "catalog:dev",
     "typescript": "catalog:dev"
   }
 }

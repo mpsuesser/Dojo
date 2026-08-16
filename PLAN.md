@@ -32,6 +32,11 @@ other important characteristics include:
 - available as PWA, downloadable as Electron app if power user / want to get rid of the PWA browser header decoration for purely aesthetic reasons
 - public open source repo
 
+
+## what is Dojo, to the agent?
+
+- it is almost as if the agent has the tools it needs to dynamically produce an experience for the piloting-human that feels like playing an interactive and lively video game, where the agent's goal is to extract information from the user's brain to record it or to otherwise advance the user's interests
+
 ## why is Dojo
 
-- between now (August 2026) and BCI maturity, there will be tremendous alpha in making tools for AI power users to up their brain-to-agent throughput
+- between now (August 2026) and BCI maturity there will be tremendous utility in making tools for AI power users to up their brain-to-agent throughput
