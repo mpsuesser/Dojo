@@ -1,4 +1,4 @@
-import { Duration, Effect, Match as M, Option, Queue, Stream, pipe } from 'effect'
+import { Duration, Effect, Match as M, Option, Queue, Stream } from 'effect'
 import * as Arr from 'effect/Array'
 import * as Schema from 'effect/Schema'
 import { Command, ManagedResource, Subscription } from 'foldkit'
@@ -7,7 +7,6 @@ import { m } from 'foldkit/message'
 import { evo } from 'foldkit/struct'
 import * as Submodel from 'foldkit/submodel'
 import type * as Update from 'foldkit/update'
-import { Dialog } from '@foldkit/ui'
 
 import sketchArtUrl from '../../../../docs/generated-concept-art/02-hall-of-form.png'
 import * as EditorAdapter from './editor.ts'
@@ -15,6 +14,7 @@ import backIconUrl from './icons/back.svg'
 import circleIconUrl from './icons/circle.svg'
 import drawIconUrl from './icons/draw.svg'
 import eraseIconUrl from './icons/erase.svg'
+import paletteArrowIconUrl from './icons/palette-arrow.svg'
 import rectangleIconUrl from './icons/rectangle.svg'
 import selectIconUrl from './icons/select.svg'
 import squareIconUrl from './icons/square.svg'
@@ -61,7 +61,6 @@ export const Model = Schema.Struct({
   activeColor: SketchColor,
   shapeCount: Schema.Int,
   copyState: CopyState,
-  clearDialog: Dialog.Model,
   feedback: Schema.Option(Schema.String),
 })
 export type Model = typeof Model.Type
@@ -77,13 +76,9 @@ export const ChangedEditorShapeCount = m('ChangedEditorShapeCount', {
 export const SelectedMode = m('SelectedMode', { mode: SketchMode })
 export const SelectedColor = m('SelectedColor', { color: SketchColor })
 export const ClickedClear = m('ClickedClear')
-export const ConfirmedClear = m('ConfirmedClear')
 export const ClickedCopyImage = m('ClickedCopyImage')
 export const ClickedClose = m('ClickedClose')
 export const PressedShortcut = m('PressedShortcut', { shortcut: Shortcut })
-export const GotClearDialogMessage = m('GotClearDialogMessage', {
-  message: Dialog.Message,
-})
 export const CompletedApplyEditorMode = m('CompletedApplyEditorMode')
 export const CompletedApplyEditorColor = m('CompletedApplyEditorColor')
 export const CompletedClearEditor = m('CompletedClearEditor')
@@ -99,11 +94,9 @@ export const Message = Schema.Union([
   SelectedMode,
   SelectedColor,
   ClickedClear,
-  ConfirmedClear,
   ClickedCopyImage,
   ClickedClose,
   PressedShortcut,
-  GotClearDialogMessage,
   CompletedApplyEditorMode,
   CompletedApplyEditorColor,
   CompletedClearEditor,
@@ -123,7 +116,6 @@ export const init = (): Model => ({
   activeColor: 'black',
   shapeCount: 0,
   copyState: 'Idle',
-  clearDialog: Dialog.init({ id: 'sketch-clear-dialog' }),
   feedback: Option.none(),
 })
 
@@ -224,13 +216,6 @@ type UpdateReturn = Update.ReturnWithOutMessage<
 >
 const withUpdateReturn = M.withReturnType<UpdateReturn>()
 
-const mapDialogCommands = (
-  commands: ReadonlyArray<Command.Command<Dialog.Message>>,
-) =>
-  Command.mapMessages(commands, message =>
-    GotClearDialogMessage({ message }),
-  )
-
 const selectMode = (model: Model, mode: SketchMode): UpdateReturn => [
   evo(model, { activeMode: () => mode, feedback: () => Option.none() }),
   [ApplyEditorMode({ mode })],
@@ -315,40 +300,17 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ClickedClear: () =>
         model.shapeCount === 0
           ? [model, [], Option.none()]
-          : pipe(
-              Dialog.open(model.clearDialog),
-              ([clearDialog, commands]) => [
-                evo(model, { clearDialog: () => clearDialog }),
-                mapDialogCommands(commands),
-                Option.none(),
-              ],
-            ),
-      ConfirmedClear: () => {
-        const [clearDialog, commands] = Dialog.close(model.clearDialog)
-        return [
-          evo(model, {
-            clearDialog: () => clearDialog,
-            activeMode: () => 'draw',
-            feedback: () => Option.none(),
-          }),
-          [...mapDialogCommands(commands), ClearEditor()],
-          Option.none(),
-        ]
-      },
+          : [
+              evo(model, {
+                activeMode: () => 'draw',
+                feedback: () => Option.none(),
+              }),
+              [ClearEditor()],
+              Option.none(),
+            ],
       ClickedCopyImage: () => handleShortcut(model, 'CopyImage'),
       ClickedClose: () => [model, [], Option.some(RequestedClose())],
       PressedShortcut: ({ shortcut }) => handleShortcut(model, shortcut),
-      GotClearDialogMessage: ({ message: dialogMessage }) => {
-        const [clearDialog, commands] = Dialog.update(
-          model.clearDialog,
-          dialogMessage,
-        )
-        return [
-          evo(model, { clearDialog: () => clearDialog }),
-          mapDialogCommands(commands),
-          Option.none(),
-        ]
-      },
       CompletedApplyEditorMode: () => [model, [], Option.none()],
       CompletedApplyEditorColor: () => [model, [], Option.none()],
       CompletedClearEditor: () => [
@@ -531,62 +493,6 @@ const button = (
     [label],
   )
 
-const clearDialog = (model: Model, h: HtmlBuilder<Message>): Html =>
-  h.submodel({
-    slotId: model.clearDialog.id,
-    model: model.clearDialog,
-    view: Dialog.view,
-    toParentMessage: message => GotClearDialogMessage({ message }),
-    viewInputs: {
-      toView: ({
-        dialog,
-        backdrop,
-        panel,
-        closeButton,
-        title,
-        description,
-        isVisible,
-      }) =>
-        h.dialog(
-          [...dialog, h.Class('sketch-dialog-root')],
-          isVisible
-            ? [
-                h.div([...backdrop, h.Class('sketch-dialog-backdrop')]),
-                h.div(
-                  [...panel, h.Class('sketch-dialog')],
-                  [
-                    h.h2([...title], ['Clear the current canvas?']),
-                    h.p(
-                      [...description],
-                      ['This removes every shape from this sketch.'],
-                    ),
-                    h.div(
-                      [h.Class('sketch-dialog-actions')],
-                      [
-                        h.button(
-                          [
-                            ...closeButton,
-                            h.Class('sketch-button sketch-button-secondary'),
-                          ],
-                          ['Cancel'],
-                        ),
-                        button(
-                          'Clear canvas',
-                          'sketch-button sketch-button-danger',
-                          false,
-                          ConfirmedClear(),
-                          h,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ]
-            : [],
-        ),
-    },
-  })
-
 export const view = Submodel.defineView<Model, Message>((model, h): Html => {
   const isReady = model.editorState === 'Ready'
   const isCopying = model.copyState === 'Copying'
@@ -709,22 +615,60 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
         [
           h.span([h.Class('sketch-palette-label')], ['Ink']),
           h.div(
-            [h.Class('sketch-swatches')],
-            Arr.map(colors, color =>
-              h.button(
+            [h.Class('sketch-palette-controls')],
+            [
+              h.div(
+                [h.Class('sketch-swatches')],
+                Arr.map(colors, color =>
+                  h.button(
+                    [
+                      h.Type('button'),
+                      h.Class('sketch-swatch'),
+                      h.Style({ backgroundColor: EditorAdapter.colorSwatches[color] }),
+                      h.AriaLabel(`Use ${colorLabels[color]}`),
+                      h.AriaPressed(`${model.activeColor === color}`),
+                      h.Disabled(!isReady || isCopying),
+                      h.OnClick(SelectedColor({ color })),
+                    ],
+                  ),
+                ),
+              ),
+              h.div(
+                [h.Class('sketch-palette-shortcuts'), h.Attribute('aria-hidden', 'true')],
                 [
-                  h.Type('button'),
-                  h.Class('sketch-swatch'),
-                  h.Style({ backgroundColor: EditorAdapter.colorSwatches[color] }),
-                  h.AriaLabel(`Use ${colorLabels[color]}`),
-                  h.AriaPressed(`${model.activeColor === color}`),
-                  h.Disabled(!isReady || isCopying),
-                  h.OnClick(SelectedColor({ color })),
+                  h.span(
+                    [h.Class('sketch-palette-shortcut')],
+                    [
+                      h.img([
+                        h.Src(paletteArrowIconUrl),
+                        h.Alt(''),
+                        h.Class('sketch-palette-arrow sketch-palette-arrow-left'),
+                      ]),
+                      h.span([h.Class('sketch-palette-hint')], ['Shift A']),
+                    ],
+                  ),
+                  h.span(
+                    [h.Class('sketch-palette-shortcut')],
+                    [
+                      h.span([h.Class('sketch-palette-hint')], ['Shift D']),
+                      h.img([
+                        h.Src(paletteArrowIconUrl),
+                        h.Alt(''),
+                        h.Class('sketch-palette-arrow'),
+                      ]),
+                    ],
+                  ),
                 ],
               ),
-            ),
+            ],
           ),
-          h.span([h.Class('sketch-palette-hint')], ['Shift A / D']),
+          h.span(
+            [
+              h.Class('sketch-palette-hint sketch-palette-balance'),
+              h.Attribute('aria-hidden', 'true'),
+            ],
+            ['Shift A / D'],
+          ),
         ],
       ),
       h.div(
@@ -734,7 +678,6 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
           button(copyLabel, 'sketch-button sketch-button-primary', !isReady || isCopying || model.shapeCount === 0, ClickedCopyImage(), h),
         ],
       ),
-      clearDialog(model, h),
     ],
   )
 })

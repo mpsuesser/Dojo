@@ -42,13 +42,18 @@ body {
 }
 
 .dojo-shell,
-.splash-shell {
+.splash-shell,
+.archivify-shell {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: #071020;
   isolation: isolate;
+}
+
+.archivify-shell {
+  background: #050303;
 }
 
 .dojo-art,
@@ -414,7 +419,7 @@ body {
 .sketch-button:disabled,
 .sketch-tool:disabled,
 .sketch-swatch:disabled {
-  cursor: wait;
+  cursor: default;
   opacity: 0.42;
 }
 
@@ -462,15 +467,6 @@ body {
   background: none;
   box-shadow: none;
   backdrop-filter: none;
-}
-
-.sketch-dialog::before {
-  position: absolute;
-  inset: 0.35rem;
-  content: '';
-  pointer-events: none;
-  border: 1px solid rgb(210 156 96 / 12%);
-  clip-path: polygon(0 0, 42% 0, 45% 2px, 55% 2px, 58% 0, 100% 0, 100% 100%, 58% 100%, 55% calc(100% - 2px), 45% calc(100% - 2px), 42% 100%, 0 100%);
 }
 
 .sketch-panel-heading {
@@ -674,9 +670,46 @@ body {
 
 .sketch-palette-hint {
   color: rgb(221 192 149 / 46%);
-  font-size: 0.49rem;
+  font-size: 0.45rem;
   font-weight: 650;
   letter-spacing: 0.1em;
+  text-transform: none;
+}
+
+.sketch-palette-controls {
+  position: relative;
+}
+
+.sketch-palette-shortcuts {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.sketch-palette-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sketch-palette-arrow {
+  display: block;
+  width: 1.35rem;
+  height: 0.5rem;
+  opacity: 0.68;
+}
+
+.sketch-palette-arrow-left {
+  transform: rotate(180deg);
+}
+
+.sketch-palette-balance {
+  visibility: hidden;
 }
 
 .sketch-swatches {
@@ -719,68 +752,6 @@ body {
     0 0 0 2px #23120e,
     0 0 0 4px #d69a5b,
     0 0 0.8rem rgb(223 133 68 / 38%);
-}
-
-.sketch-dialog-backdrop {
-  position: fixed;
-  z-index: 0;
-  inset: 0;
-  display: grid;
-  padding: 1rem;
-  place-items: center;
-  background: rgb(7 4 4 / 78%);
-  backdrop-filter: blur(4px);
-}
-
-.sketch-dialog-root {
-  position: fixed;
-  z-index: 1000;
-  inset: 0;
-  width: 100%;
-  max-width: none;
-  height: 100%;
-  max-height: none;
-  padding: 0;
-  border: 0;
-  color: #f1dfbd;
-  background: transparent;
-}
-
-.sketch-dialog {
-  position: relative;
-  z-index: 1;
-  width: min(26rem, calc(100% - 2rem));
-  padding: 1.7rem;
-  border: 1px solid #95613a;
-  border-radius: 0.12rem;
-  background:
-    linear-gradient(145deg, rgb(105 39 31 / 94%), rgb(29 17 15 / 98%) 50%, rgb(16 12 11 / 98%)),
-    #321b18;
-  box-shadow:
-    inset 0 1px 0 rgb(255 222 170 / 10%),
-    inset 0 0 3rem rgb(0 0 0 / 30%),
-    0 1.5rem 4rem rgb(0 0 0 / 68%);
-}
-
-.sketch-dialog h2 {
-  margin: 0 0 0.55rem;
-  color: #f1ddb8;
-  font-size: 1.25rem;
-  font-weight: 500;
-}
-
-.sketch-dialog p {
-  margin: 0;
-  color: rgb(235 215 181 / 66%);
-  font-size: 0.83rem;
-  line-height: 1.5;
-}
-
-.sketch-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.55rem;
-  margin-top: 1.25rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

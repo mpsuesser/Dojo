@@ -24,6 +24,11 @@ test('the main menu navigates between Foldkit routes', async ({ page }) => {
   await expect(page.getByTestId('sketch-editor')).toBeVisible()
 
   await page.goBack()
+  await page.getByRole('link', { name: 'Archivify' }).click()
+  await expect(page).toHaveURL(/\/archivify$/)
+  await expect(page.getByTestId('archivify-page')).toBeVisible()
+
+  await page.goBack()
   await page.getByRole('link', { name: 'Interrogation' }).click()
   await expect(page).toHaveURL(/\/interrogation$/)
   await expect(page.getByTestId('interrogation-splash')).toBeVisible()
@@ -51,7 +56,7 @@ test('the web app is installable as a PWA', async ({ browserName, page }) => {
   expect(installabilityErrors).toEqual([])
 })
 
-test('the sketch persists drawings and clears them through the Foldkit dialog', async ({
+test('the sketch persists drawings and clears them directly', async ({
   page,
 }) => {
   await page.goto('/sketch')
@@ -84,14 +89,6 @@ test('the sketch persists drawings and clears them through the Foldkit dialog', 
   await expect(page.getByRole('button', { name: 'Clear' })).toBeEnabled()
 
   await page.getByRole('button', { name: 'Clear' }).click()
-  await expect(
-    page.getByRole('dialog', { name: 'Clear the current canvas?' }),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Cancel' }).click()
-  await expect(page.getByRole('dialog')).not.toBeVisible()
-
-  await page.getByRole('button', { name: 'Clear' }).click()
-  await page.getByRole('button', { name: 'Clear canvas' }).click()
   await expect(page.getByRole('button', { name: 'Clear' })).toBeDisabled()
 
   await page.getByRole('button', { name: 'Return to Dojo' }).click()

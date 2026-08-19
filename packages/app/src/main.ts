@@ -13,6 +13,7 @@ import interviewArtUrl from '../../../docs/generated-concept-art/04-hall-of-voic
 import settingsArtUrl from '../../../docs/generated-concept-art/06-inner-courtyard.png'
 import {
   AppRoute,
+  archivifyRouter,
   homeRouter,
   interrogationRouter,
   interviewRouter,
@@ -173,6 +174,12 @@ const homeView = (protocol: string, h: HtmlBuilder<Message>) =>
                 h,
               ),
               menuLink(
+                'Archivify',
+                navigationHref(protocol, archivifyRouter()),
+                'menu-link-archivify',
+                h,
+              ),
+              menuLink(
                 'Interrogation',
                 navigationHref(protocol, interrogationRouter()),
                 'menu-link-interrogation',
@@ -218,6 +225,14 @@ const routeDocument = M.type<AppRoute>().pipe(
           view: Sketch.view,
           toParentMessage: message => GotSketchMessage({ message }),
         }),
+    }),
+    Archivify: () => ({
+      title: 'Archivify | Dojo',
+      bodyView: (_model: Model, h: HtmlBuilder<Message>) =>
+        h.main([
+          h.Class('archivify-shell'),
+          h.Attribute('data-testid', 'archivify-page'),
+        ]),
     }),
     Interrogation: () => ({
       title: 'Interrogation | Dojo',

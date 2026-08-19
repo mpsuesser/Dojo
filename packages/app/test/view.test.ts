@@ -4,6 +4,7 @@ import { expect, given, role, scene, selector } from 'foldkit/scene'
 import { update, view } from '../src/main.ts'
 import * as Sketch from '../src/sketch/main.ts'
 import {
+  ArchivifyRoute,
   HomeRoute,
   InterrogationRoute,
   InterviewRoute,
@@ -20,9 +21,19 @@ describe('Dojo view', () => {
       expect(selector('[data-testid="dojo-art"]')).toExist(),
       expect(role('heading', { name: 'Dojo' })).toExist(),
       expect(role('link', { name: 'Sketch' })).toExist(),
+      expect(role('link', { name: 'Archivify' })).toExist(),
       expect(role('link', { name: 'Interrogation' })).toExist(),
       expect(role('link', { name: 'Interview' })).toExist(),
       expect(role('link', { name: 'Settings' })).toExist(),
+    )
+  })
+
+  test('shows the empty Archivify page on the Archivify route', () => {
+    scene(
+      { update, view },
+      given({ route: ArchivifyRoute(), protocol: 'https:', sketch: Sketch.init() }),
+      expect(selector('[data-testid="archivify-page"]')).toExist(),
+      expect(role('navigation')).not.toExist(),
     )
   })
 
