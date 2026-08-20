@@ -1,11 +1,11 @@
 import { Effect, Match as M, Option } from 'effect'
 import * as Schema from 'effect/Schema'
-import { Command, ManagedResource, Subscription, type Runtime } from 'foldkit'
+import { Command, ManagedResource, type Runtime, Subscription } from 'foldkit'
 import type { Document, Html, HtmlBuilder } from 'foldkit/html'
 import { m } from 'foldkit/message'
-import { UrlRequest, load, pushUrl } from 'foldkit/navigation'
+import { load, pushUrl, UrlRequest } from 'foldkit/navigation'
 import { evo } from 'foldkit/struct'
-import { Url, toString as urlToString } from 'foldkit/url'
+import { toString as urlToString, Url } from 'foldkit/url'
 
 import dojoArtUrl from '../../../docs/generated-concept-art/01-the-dojo.png'
 import interrogationArtUrl from '../../../docs/generated-concept-art/03-hall-of-questions.png'
@@ -48,14 +48,14 @@ export const Message = Schema.Union([
 ])
 export type Message = typeof Message.Type
 
-export const init: Runtime.RoutingApplicationInit<Model, Message> = (url: Url) =>
-  [{ route: urlToAppRoute(url), protocol: url.protocol, sketch: Sketch.init() }, []]
+export const init: Runtime.RoutingApplicationInit<Model, Message> = (
+  url: Url,
+) => [{ route: urlToAppRoute(url), protocol: url.protocol, sketch: Sketch.init() }, []]
 
 const NavigateInternal = Command.define('NavigateInternal', {
   args: { url: Schema.String },
   messages: [CompletedNavigateInternal],
-  execute: ({ url }) =>
-    pushUrl(url).pipe(Effect.as(CompletedNavigateInternal())),
+  execute: ({ url }) => pushUrl(url).pipe(Effect.as(CompletedNavigateInternal())),
 })
 
 const LoadExternal = Command.define('LoadExternal', {
@@ -100,8 +100,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           model.sketch,
           sketchMessage,
         )
-        const commands = Command.mapMessages(sketchCommands, message =>
-          GotSketchMessage({ message }),
+        const commands = Command.mapMessages(
+          sketchCommands,
+          message => GotSketchMessage({ message }),
         )
         return Option.match(maybeOutMessage, {
           onNone: () => [evo(model, { sketch: () => sketch }), commands],

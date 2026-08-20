@@ -45,9 +45,7 @@ test('the web app is installable as a PWA', async ({ browserName, page }) => {
   test.skip(browserName !== 'chromium')
 
   await page.goto('/')
-  await page.waitForFunction(async () =>
-    Boolean(await navigator.serviceWorker.getRegistration()),
-  )
+  await page.waitForFunction(async () => Boolean(await navigator.serviceWorker.getRegistration()))
 
   const session = await page.context().newCDPSession(page)
   const { installabilityErrors } = await session.send(
@@ -56,9 +54,7 @@ test('the web app is installable as a PWA', async ({ browserName, page }) => {
   expect(installabilityErrors).toEqual([])
 })
 
-test('the sketch persists drawings and clears them directly', async ({
-  page,
-}) => {
+test('the sketch persists drawings and clears them directly', async ({ page }) => {
   await page.goto('/sketch')
   await expect(page.getByRole('button', { name: 'Draw' })).toBeEnabled()
 

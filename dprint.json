@@ -1,0 +1,39 @@
+{
+  "$schema": "https://dprint.dev/schemas/v0.json",
+  "incremental": true,
+  "indentWidth": 2,
+  "lineWidth": 100,
+  "useTabs": false,
+  "newLineKind": "lf",
+  "typescript": {
+    "semiColons": "asi",
+    "quoteStyle": "preferSingle",
+    "quoteProps": "preserve",
+    "trailingCommas": "onlyMultiLine",
+    "operatorPosition": "maintain",
+    "useBraces": "maintain",
+    "arrowFunction.useParentheses": "preferNone",
+    "functionExpression.spaceAfterFunctionKeyword": true
+  },
+  "json": {
+    "indentWidth": 2,
+    "useTabs": false
+  },
+  "includes": [
+    "**/*.{ts,tsx,js,jsx,cjs,mjs,cts,mts,json,jsonc,yaml,yml,toml}"
+  ],
+  "excludes": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/*.tsbuildinfo",
+    "**/*.md",
+    "tools/oxlint/anti-slop/**",
+    "bun.lock"
+  ],
+  "plugins": [
+    "https://plugins.dprint.dev/typescript-0.95.15.wasm",
+    "https://plugins.dprint.dev/json-0.21.3.wasm",
+    "https://plugins.dprint.dev/toml-0.7.0.wasm",
+    "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm"
+  ]
+}

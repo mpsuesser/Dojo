@@ -1,0 +1,9 @@
+{
+  "name": "@dmmulroy/anti-slop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./index.js",
+  "repository": "https://github.com/dmmulroy/anti-slop.git",
+  "gitHead": "6d538555cb151d4121ed51a27db81890eacf8ae9"
+}

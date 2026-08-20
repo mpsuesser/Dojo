@@ -3,10 +3,10 @@ import { Runtime } from 'foldkit'
 import {
   ChangedUrl,
   ClickedLink,
-  Message,
-  Model,
   init,
   managedResources,
+  Message,
+  Model,
   subscriptions,
   update,
   view,

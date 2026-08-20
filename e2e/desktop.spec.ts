@@ -39,9 +39,7 @@ test('the desktop app navigates from the Dojo menu', async (
       window.getByRole('button', { name: 'Copied image to clipboard.' }),
     ).toBeVisible()
     expect(
-      await application.evaluate(({ clipboard }) =>
-        clipboard.readImage().isEmpty(),
-      ),
+      await application.evaluate(({ clipboard }) => clipboard.readImage().isEmpty()),
     ).toBe(false)
   } finally {
     await application.close()

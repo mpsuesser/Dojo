@@ -1,6 +1,6 @@
 import { NodePath } from '@effect/platform-node'
-import { app, BrowserWindow, session } from 'electron'
 import { Config, Effect, Option, Path } from 'effect'
+import { app, BrowserWindow, session } from 'electron'
 
 const developmentRendererUrl = Effect.runSync(
   Config.option(Config.url('DOJO_RENDERER_URL')),
@@ -17,8 +17,8 @@ const validatedDevelopmentRendererUrl = Effect.runSync(
       isLocalDevelopmentUrl(url)
         ? Effect.succeedSome(url)
         : Effect.die(
-            new Error('DOJO_RENDERER_URL must be a local HTTP URL'),
-          ),
+          new Error('DOJO_RENDERER_URL must be a local HTTP URL'),
+        ),
   }),
 )
 

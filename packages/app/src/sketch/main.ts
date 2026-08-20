@@ -132,8 +132,7 @@ const runEditorAction = <A>(
     Effect.catchTag('ResourceNotAvailable', () =>
       Effect.fail(
         new EditorAdapter.EditorActionError({ reason: 'The editor is not ready.' }),
-      ),
-    ),
+      )),
   )
 
 const ApplyEditorMode = Command.define('ApplyEditorMode', {
@@ -143,8 +142,7 @@ const ApplyEditorMode = Command.define('ApplyEditorMode', {
     runEditorAction(editor => EditorAdapter.applyMode(editor, mode)).pipe(
       Effect.as(CompletedApplyEditorMode()),
       Effect.catchTag('EditorActionError', ({ reason }) =>
-        Effect.succeed(FailedEditorAction({ reason })),
-      ),
+        Effect.succeed(FailedEditorAction({ reason }))),
     ),
 })
 
@@ -152,12 +150,11 @@ const ApplyEditorColor = Command.define('ApplyEditorColor', {
   args: { color: SketchColor, applyToSelectedShapes: Schema.Boolean },
   messages: [CompletedApplyEditorColor, FailedEditorAction],
   execute: ({ color, applyToSelectedShapes }) =>
-    runEditorAction(editor =>
-      EditorAdapter.applyColor(editor, color, applyToSelectedShapes),
-    ).pipe(
+    runEditorAction(editor => EditorAdapter.applyColor(editor, color, applyToSelectedShapes)).pipe(
       Effect.as(CompletedApplyEditorColor()),
-      Effect.catchTag('EditorActionError', ({ reason }) =>
-        Effect.succeed(FailedEditorAction({ reason })),
+      Effect.catchTag(
+        'EditorActionError',
+        ({ reason }) => Effect.succeed(FailedEditorAction({ reason })),
       ),
     ),
 })
@@ -166,8 +163,9 @@ const ClearEditor = Command.define('ClearEditor', {
   messages: [CompletedClearEditor, FailedEditorAction],
   execute: runEditorAction(EditorAdapter.clear).pipe(
     Effect.as(CompletedClearEditor()),
-    Effect.catchTag('EditorActionError', ({ reason }) =>
-      Effect.succeed(FailedEditorAction({ reason })),
+    Effect.catchTag(
+      'EditorActionError',
+      ({ reason }) => Effect.succeed(FailedEditorAction({ reason })),
     ),
   ),
 })
@@ -176,8 +174,9 @@ const CopyEditorImage = Command.define('CopyEditorImage', {
   messages: [SucceededCopyEditorImage, FailedEditorAction],
   execute: runEditorAction(EditorAdapter.copyImage).pipe(
     Effect.as(SucceededCopyEditorImage()),
-    Effect.catchTag('EditorActionError', ({ reason }) =>
-      Effect.succeed(FailedEditorAction({ reason })),
+    Effect.catchTag(
+      'EditorActionError',
+      ({ reason }) => Effect.succeed(FailedEditorAction({ reason })),
     ),
   ),
 })
@@ -205,7 +204,10 @@ const shiftedColor = (
   direction: -1 | 1,
 ): SketchColor => {
   const current = Option.getOrElse(Arr.findFirstIndex(colors, value => value === color), () => 0)
-  return Option.getOrElse(Arr.get(colors, Math.min(Math.max(current + direction, 0), colors.length - 1)), () => color)
+  return Option.getOrElse(
+    Arr.get(colors, Math.min(Math.max(current + direction, 0), colors.length - 1)),
+    () => color,
+  )
 }
 
 type UpdateReturn = Update.ReturnWithOutMessage<
@@ -246,21 +248,16 @@ const handleShortcut = (
     M.when('Text', () => selectMode(model, 'text')),
     M.when('Erase', () => selectMode(model, 'erase')),
     M.when('Select', () => selectMode(model, 'select')),
-    M.when('PreviousColor', () =>
-      selectColor(model, shiftedColor(model.activeColor, -1)),
-    ),
-    M.when('NextColor', () =>
-      selectColor(model, shiftedColor(model.activeColor, 1)),
-    ),
+    M.when('PreviousColor', () => selectColor(model, shiftedColor(model.activeColor, -1))),
+    M.when('NextColor', () => selectColor(model, shiftedColor(model.activeColor, 1))),
     M.when('CopyImage', () =>
       model.shapeCount === 0 || model.copyState === 'Copying'
         ? [model, [], Option.none()]
         : [
-            evo(model, { copyState: () => 'Copying', feedback: () => Option.none() }),
-            [CopyEditorImage()],
-            Option.none(),
-          ],
-    ),
+          evo(model, { copyState: () => 'Copying', feedback: () => Option.none() }),
+          [CopyEditorImage()],
+          Option.none(),
+        ]),
     M.exhaustive,
   )
 
@@ -301,13 +298,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         model.shapeCount === 0
           ? [model, [], Option.none()]
           : [
-              evo(model, {
-                activeMode: () => 'draw',
-                feedback: () => Option.none(),
-              }),
-              [ClearEditor()],
-              Option.none(),
-            ],
+            evo(model, {
+              activeMode: () => 'draw',
+              feedback: () => Option.none(),
+            }),
+            [ClearEditor()],
+            Option.none(),
+          ],
       ClickedCopyImage: () => handleShortcut(model, 'CopyImage'),
       ClickedClose: () => [model, [], Option.some(RequestedClose())],
       PressedShortcut: ({ shortcut }) => handleShortcut(model, shortcut),
@@ -348,14 +345,12 @@ export const managedResources = ManagedResource.make<Model, Message>()(entry => 
     modelToMaybeRequirements: () => Option.some(null),
     acquire: () => EditorAdapter.acquire('sketch-editor-host'),
     release: () => Effect.void,
-    onAcquired: editor =>
-      AcquiredEditor({ shapeCount: EditorAdapter.shapeCount(editor) }),
+    onAcquired: editor => AcquiredEditor({ shapeCount: EditorAdapter.shapeCount(editor) }),
     onAcquireError: error =>
       FailedAcquireEditor({
-        reason:
-          error instanceof EditorAdapter.EditorAcquireError
-            ? error.reason
-            : 'The canvas could not be loaded.',
+        reason: error instanceof EditorAdapter.EditorAcquireError
+          ? error.reason
+          : 'The canvas could not be loaded.',
       }),
     onReleased: () => ReleasedEditor(),
   }),
@@ -380,8 +375,8 @@ const editorChanges = Stream.unwrap(
             })
           }),
           removeListener => Effect.sync(removeListener),
-        ).pipe(Effect.flatMap(() => Effect.never)),
-      ),
+        ).pipe(Effect.flatMap(() => Effect.never))
+      )
     ),
     Effect.catchTag('ResourceNotAvailable', () => Effect.succeed(Stream.empty)),
   ),
@@ -398,30 +393,29 @@ const shortcutFromKeyboard = (event: KeyboardEvent): Option.Option<Message> => {
     return Option.none()
   }
 
-  const shortcut =
-    event.metaKey || event.ctrlKey
-      ? event.key === 'Enter'
-        ? Option.some<typeof Shortcut.Type>('CopyImage')
-        : Option.none()
-      : event.altKey
-        ? Option.none()
-        : event.shiftKey
-          ? event.code === 'KeyA'
-            ? Option.some<typeof Shortcut.Type>('PreviousColor')
-            : event.code === 'KeyD'
-              ? Option.some<typeof Shortcut.Type>('NextColor')
-              : Option.none()
-          : M.value(event.code).pipe(
-              M.withReturnType<Option.Option<typeof Shortcut.Type>>(),
-              M.when('KeyD', () => Option.some('Draw')),
-              M.when('KeyS', () => Option.some('Square')),
-              M.when('KeyC', () => Option.some('Circle')),
-              M.when('KeyR', () => Option.some('Rectangle')),
-              M.when('KeyT', () => Option.some('Text')),
-              M.when('KeyE', () => Option.some('Erase')),
-              M.when('KeyW', () => Option.some('Select')),
-              M.orElse(() => Option.none()),
-            )
+  const shortcut = event.metaKey || event.ctrlKey
+    ? event.key === 'Enter'
+      ? Option.some<typeof Shortcut.Type>('CopyImage')
+      : Option.none()
+    : event.altKey
+    ? Option.none()
+    : event.shiftKey
+    ? event.code === 'KeyA'
+      ? Option.some<typeof Shortcut.Type>('PreviousColor')
+      : event.code === 'KeyD'
+      ? Option.some<typeof Shortcut.Type>('NextColor')
+      : Option.none()
+    : M.value(event.code).pipe(
+      M.withReturnType<Option.Option<typeof Shortcut.Type>>(),
+      M.when('KeyD', () => Option.some('Draw')),
+      M.when('KeyS', () => Option.some('Square')),
+      M.when('KeyC', () => Option.some('Circle')),
+      M.when('KeyR', () => Option.some('Rectangle')),
+      M.when('KeyT', () => Option.some('Text')),
+      M.when('KeyE', () => Option.some('Erase')),
+      M.when('KeyW', () => Option.some('Select')),
+      M.orElse(() => Option.none()),
+    )
 
   return Option.map(shortcut, value => {
     event.preventDefault()
@@ -436,8 +430,7 @@ export const subscriptions = Subscription.make<Model, Message, EditorService>()(
       { isReady: Schema.Boolean },
       {
         modelToDependencies: model => ({ isReady: model.editorState === 'Ready' }),
-        dependenciesToStream: ({ isReady }) =>
-          isReady ? editorChanges : Stream.empty,
+        dependenciesToStream: ({ isReady }) => isReady ? editorChanges : Stream.empty,
       },
     ),
     keyboard: entry(
@@ -580,8 +573,7 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
                         h.Class('sketch-tool-icon'),
                       ]),
                     ],
-                  ),
-                ),
+                  )),
               ),
             ],
           ),
@@ -603,8 +595,8 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
                 : null,
               model.editorState === 'Failed'
                 ? h.p([h.Class('sketch-loading sketch-error'), h.Role('alert')], [
-                    Option.getOrElse(model.feedback, () => 'The canvas could not be loaded.'),
-                  ])
+                  Option.getOrElse(model.feedback, () => 'The canvas could not be loaded.'),
+                ])
                 : null,
             ],
           ),
@@ -630,8 +622,7 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
                       h.Disabled(!isReady || isCopying),
                       h.OnClick(SelectedColor({ color })),
                     ],
-                  ),
-                ),
+                  )),
               ),
               h.div(
                 [h.Class('sketch-palette-shortcuts'), h.Attribute('aria-hidden', 'true')],
@@ -674,8 +665,20 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
       h.div(
         [h.Class('sketch-actions')],
         [
-          button('Clear', 'sketch-button sketch-button-quiet', !isReady || isCopying || model.shapeCount === 0, ClickedClear(), h),
-          button(copyLabel, 'sketch-button sketch-button-primary', !isReady || isCopying || model.shapeCount === 0, ClickedCopyImage(), h),
+          button(
+            'Clear',
+            'sketch-button sketch-button-quiet',
+            !isReady || isCopying || model.shapeCount === 0,
+            ClickedClear(),
+            h,
+          ),
+          button(
+            copyLabel,
+            'sketch-button sketch-button-primary',
+            !isReady || isCopying || model.shapeCount === 0,
+            ClickedCopyImage(),
+            h,
+          ),
         ],
       ),
     ],

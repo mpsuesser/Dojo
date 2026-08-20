@@ -11,20 +11,37 @@
     "catalog": {
       "@effect/platform-bun": "4.0.0-rc.108",
       "@effect/platform-node": "4.0.0-rc.108",
+      "@foldkit/ui": "0.145.0",
+      "@tldraw/assets": "5.3.1",
+      "alchemy": "2.0.0-beta.72",
       "effect": "4.0.0-rc.108",
-      "foldkit": "0.145.0"
+      "foldkit": "0.145.0",
+      "react": "19.2.8",
+      "react-dom": "19.2.8",
+      "tldraw": "5.3.1"
     },
     "catalogs": {
       "dev": {
+        "@dmmulroy/anti-slop": "file:tools/oxlint/anti-slop",
         "@effect/language-service": "0.87.2",
+        "@effect/tsgo": "0.36.5",
         "@effect/vitest": "4.0.0-rc.108",
+        "@foldkit/devtools-mcp": "0.15.0",
         "@foldkit/oxlint-plugin": "0.6.0",
         "@foldkit/vite-plugin": "0.13.1",
+        "@mpsuesser/oxlint-plugin-effect": "0.4.3",
+        "@oxlint/plugins": "1.78.0",
+        "@playwright/test": "1.62.1",
         "@types/bun": "1.3.14",
         "@types/node": "26.2.0",
+        "@types/react": "19.2.2",
+        "@types/react-dom": "19.2.2",
+        "chrome-devtools-mcp": "1.7.0",
+        "dprint": "0.56.0",
         "electron": "43.4.0",
         "electron-builder": "26.15.3",
         "electron-builder-squirrel-windows": "26.15.3",
+        "lefthook": "2.1.10",
         "oxlint": "1.78.0",
         "oxlint-tsgolint": "7.0.2001",
         "typescript": "7.0.2",
@@ -44,23 +61,34 @@
     "test:e2e": "bun run build && playwright test",
     "typecheck": "bun run --cwd packages/shared typecheck && bun run --cwd packages/app typecheck && bun run --cwd packages/desktop typecheck && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p e2e/tsconfig.json",
     "lint": "oxlint --type-aware --type-check --report-unused-disable-directives .",
-    "check": "bun run typecheck && bun run lint && bun run test && bun run build"
+    "format": "dprint fmt",
+    "format:check": "dprint check",
+    "check": "bun run typecheck && bun run lint && bun run test && bun run build",
+    "prepare": "effect-tsgo patch --oxlint && lefthook install"
   },
   "dependencies": {
     "@effect/platform-bun": "catalog:",
     "effect": "catalog:"
   },
   "devDependencies": {
-    "@foldkit/devtools-mcp": "0.15.0",
+    "@dmmulroy/anti-slop": "catalog:dev",
+    "@effect/tsgo": "catalog:dev",
+    "@effect/vitest": "catalog:dev",
+    "@foldkit/devtools-mcp": "catalog:dev",
     "@foldkit/oxlint-plugin": "catalog:dev",
-    "@playwright/test": "1.62.1",
+    "@mpsuesser/oxlint-plugin-effect": "catalog:dev",
+    "@oxlint/plugins": "catalog:dev",
+    "@playwright/test": "catalog:dev",
     "@types/bun": "catalog:dev",
     "@types/node": "catalog:dev",
-    "alchemy": "2.0.0-beta.72",
-    "chrome-devtools-mcp": "1.7.0",
+    "alchemy": "catalog:",
+    "chrome-devtools-mcp": "catalog:dev",
+    "dprint": "catalog:dev",
+    "lefthook": "catalog:dev",
     "oxlint": "catalog:dev",
     "oxlint-tsgolint": "catalog:dev",
-    "typescript": "catalog:dev"
+    "typescript": "catalog:dev",
+    "vitest": "catalog:dev"
   },
   "engines": {
     "bun": ">=1.3.14"
@@ -69,6 +97,8 @@
     "@effect/platform-node-shared": "4.0.0-rc.108"
   },
   "trustedDependencies": [
+    "dprint",
+    "lefthook",
     "electron"
   ]
 }

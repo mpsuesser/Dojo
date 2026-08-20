@@ -1,15 +1,11 @@
+import { getAssetUrlsByImport } from '@tldraw/assets/imports.vite'
 import { Deferred, Effect, Match as M, Option } from 'effect'
 import * as P from 'effect/Predicate'
 import * as Schema from 'effect/Schema'
 import { Render } from 'foldkit'
 import { createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { getAssetUrlsByImport } from '@tldraw/assets/imports.vite'
-import type {
-  Editor,
-  TLShape,
-  TLUiComponents,
-} from 'tldraw'
+import type { Editor, TLShape, TLUiComponents } from 'tldraw'
 
 import type { SketchColor, SketchMode } from './main.ts'
 
@@ -51,8 +47,8 @@ const errorReason = (cause: unknown): string =>
   P.isError(cause)
     ? cause.message
     : P.isString(cause)
-      ? cause
-      : 'The editor operation failed.'
+    ? cause
+    : 'The editor operation failed.'
 
 const setEditorMode = (
   handle: Pick<SketchEditor, 'activeMode' | 'api' | 'editor'>,
@@ -96,8 +92,7 @@ const normalizeConstrainedShape = (
   shape: TLShape,
   mode: SketchMode,
 ): TLShape => {
-  const expectedGeo =
-    mode === 'square' ? 'rectangle' : mode === 'circle' ? 'ellipse' : null
+  const expectedGeo = mode === 'square' ? 'rectangle' : mode === 'circle' ? 'ellipse' : null
   if (shape.type !== 'geo' || shape.props.geo !== expectedGeo) return shape
 
   const size = Math.max(shape.props.w, shape.props.h)
@@ -158,7 +153,7 @@ export const acquire = Effect.fn('Sketch.acquireEditor')(function* (
           Deferred.doneUnsafe(ready, Effect.succeed(editor))
         },
       }),
-    ),
+    )
   )
   const editor = yield* Deferred.await(ready)
   const activeMode: { current: SketchMode } = { current: 'draw' }
@@ -173,14 +168,13 @@ export const acquire = Effect.fn('Sketch.acquireEditor')(function* (
   )
   const disposeBeforeChange = editor.sideEffects.registerBeforeChangeHandler(
     'shape',
-    (_previous, shape) =>
-      normalizeConstrainedShape(editor, shape, activeMode.current),
+    (_previous, shape) => normalizeConstrainedShape(editor, shape, activeMode.current),
   )
   yield* Effect.addFinalizer(() =>
     Effect.sync(() => {
       disposeBeforeCreate()
       disposeBeforeChange()
-    }),
+    })
   )
 
   return handle

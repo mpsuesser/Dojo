@@ -27,9 +27,9 @@ export default Alchemy.Stack(
       },
       ...(stage === 'prod'
         ? {
-            domain: 'dojo.bingo',
-            workersDev: false,
-          }
+          domain: 'dojo.bingo',
+          workersDev: false,
+        }
         : {}),
     })
 

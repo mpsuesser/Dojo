@@ -2,7 +2,6 @@ import { describe, test } from '@effect/vitest'
 import { expect, given, role, scene, selector } from 'foldkit/scene'
 
 import { update, view } from '../src/main.ts'
-import * as Sketch from '../src/sketch/main.ts'
 import {
   ArchivifyRoute,
   HomeRoute,
@@ -11,6 +10,7 @@ import {
   SettingsRoute,
   SketchRoute,
 } from '../src/route.ts'
+import * as Sketch from '../src/sketch/main.ts'
 
 describe('Dojo view', () => {
   test('shows the Dojo menu on the home route', () => {

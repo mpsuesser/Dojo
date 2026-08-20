@@ -1,10 +1,21 @@
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript"],
+  "$schema": "./node_modules/@effect/tsgo/oxlint-schema.json",
+  "options": {
+    "typeAware": true
+  },
+  "plugins": ["effecttsgo", "typescript"],
   "jsPlugins": [
+    {
+      "name": "effect",
+      "specifier": "@mpsuesser/oxlint-plugin-effect"
+    },
     {
       "name": "foldkit",
       "specifier": "@foldkit/oxlint-plugin"
+    },
+    {
+      "name": "anti-slop",
+      "specifier": "@dmmulroy/anti-slop"
     }
   ],
   "rules": {
@@ -67,6 +78,7 @@
     "**/dist/**",
     "**/node_modules/**",
     "docs/",
+    "tools/oxlint/anti-slop/**",
     "**/release/**",
     "**/release-dev/**"
   ]

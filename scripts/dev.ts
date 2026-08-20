@@ -1,10 +1,7 @@
 import { BunHttpClient, BunRuntime, BunServices } from '@effect/platform-bun'
 import { Config, Data, Effect, Path, Schedule } from 'effect'
 import { HttpClient, HttpClientResponse } from 'effect/unstable/http'
-import {
-  ChildProcess,
-  ChildProcessSpawner,
-} from 'effect/unstable/process'
+import { ChildProcess, ChildProcessSpawner } from 'effect/unstable/process'
 
 class DevelopmentProcessError extends Data.TaggedError(
   'DevelopmentProcessError',

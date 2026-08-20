@@ -63,8 +63,7 @@ export const urlToAppRoute = (url: Url): AppRoute =>
         ...url,
         pathname: Option.getOrElse(url.hash, () => '/'),
         hash: Option.none(),
-      }),
-    ),
+      })),
     M.orElse(() => parseUrl(url)),
   )
 
