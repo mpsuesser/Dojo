@@ -12,6 +12,7 @@ import type { SketchColor, SketchMode } from './main.ts'
 const assetUrls = getAssetUrlsByImport()
 const persistenceKey = 'opencode-sketch-tldraw'
 const components: TLUiComponents = { ContextMenu: null }
+const canvasBackgroundColor = '#efe1c2'
 
 export const colorSwatches: Readonly<Record<SketchColor, string>> = {
   black: '#1d1d1d',
@@ -37,6 +38,7 @@ export type SketchEditor = Readonly<{
   activeMode: { current: SketchMode }
   api: Pick<
     typeof import('tldraw'),
+    | 'DEFAULT_THEME'
     | 'DefaultColorStyle'
     | 'GeoShapeGeoStyle'
     | 'Tldraw'
@@ -141,14 +143,26 @@ export const acquire = Effect.fn('Sketch.acquireEditor')(function* (
   })
 
   const ready = yield* Deferred.make<Editor>()
+  const parchmentTheme = {
+    ...api.DEFAULT_THEME,
+    colors: {
+      ...api.DEFAULT_THEME.colors,
+      light: {
+        ...api.DEFAULT_THEME.colors.light,
+        background: canvasBackgroundColor,
+      },
+    },
+  }
   yield* Effect.sync(() =>
     root.render(
       createElement(api.Tldraw, {
         assetUrls,
         autoFocus: true,
+        colorScheme: 'light',
         components,
         hideUi: true,
         persistenceKey,
+        themes: { default: parchmentTheme },
         onMount: editor => {
           Deferred.doneUnsafe(ready, Effect.succeed(editor))
         },

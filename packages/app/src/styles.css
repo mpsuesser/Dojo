@@ -1109,13 +1109,17 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #f7f1df;
+  background: #efe1c2;
   box-shadow: inset 0 0 1.5rem rgb(72 45 25 / 12%);
 }
 
 .sketch-editor-host .tl-container {
   position: absolute;
   inset: 0;
+}
+
+.sketch-editor-host .tl-theme__light {
+  --tl-color-background: #efe1c2;
 }
 
 .sketch-loading {

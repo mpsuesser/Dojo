@@ -9,8 +9,8 @@ import { toString as urlToString, Url } from 'foldkit/url'
 
 import dojoArtUrl from '../../../docs/generated-concept-art/01-the-dojo.png'
 import interrogationArtUrl from '../../../docs/generated-concept-art/03-hall-of-questions.png'
-import interviewArtUrl from '../../../docs/generated-concept-art/04-hall-of-voices.png'
 import archivifyArtUrl from '../../../docs/generated-concept-art/08-hall-of-memory.png'
+import interviewArtUrl from '../../../docs/generated-concept-art/10-interview-conversation-refined.png'
 import {
   MusicPlaybackError,
   MusicPlaybackState,
@@ -61,6 +61,7 @@ export const GotSettingsMessage = m('GotSettingsMessage', {
   message: Settings.Message,
 })
 export const InteractedWithPage = m('InteractedWithPage')
+export const PressedEscape = m('PressedEscape')
 export const SucceededStartMusic = m('SucceededStartMusic', {
   attempt: MusicStartAttempt,
 })
@@ -76,6 +77,7 @@ export const Message = Schema.Union([
   GotSketchMessage,
   GotSettingsMessage,
   InteractedWithPage,
+  PressedEscape,
   SucceededStartMusic,
   FailedStartMusic,
 ])
@@ -202,6 +204,19 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             [],
           ]),
           M.orElse(() => [model, []]),
+        ),
+      PressedEscape: () =>
+        M.value(model.route).pipe(
+          withUpdateReturn,
+          M.tag('Home', () => [model, []]),
+          M.orElse(() => [
+            model,
+            [
+              NavigateInternal({
+                url: navigationHref(model.protocol, homeRouter()),
+              }),
+            ],
+          ]),
         ),
       SucceededStartMusic: () => [
         evo(model, { musicPlaybackState: () => 'Playing' }),
@@ -455,7 +470,7 @@ const routeDocument = M.type<AppRoute>().pipe(
         featureSplashView(
           model.protocol,
           interviewArtUrl,
-          'A ceremonial hall of voices prepared for an interview',
+          'Two focused speakers sharing a resonant conversation in the Hall of Voices',
           'interview-splash',
           'Hall of Voices',
           'Interview',
@@ -552,6 +567,35 @@ const isWaitingForMusicInteraction = (
     M.orElse(() => false),
   )
 
+const escapeFromKeyboard = (event: KeyboardEvent): Option.Option<Message> =>
+  M.value(event.key).pipe(
+    M.withReturnType<Option.Option<Message>>(),
+    M.when('Escape', () => {
+      event.preventDefault()
+      event.stopPropagation()
+      return Option.some(PressedEscape())
+    }),
+    M.orElse(() => Option.none()),
+  )
+
+const escapeNavigationSubscription = Subscription.make<Model, Message>()(
+  entry => ({
+    escapeNavigation: entry(
+      {},
+      {
+        modelToDependencies: () => ({}),
+        dependenciesToStream: () =>
+          Subscription.fromEventFilterMap<KeyboardEvent, Message>({
+            target: document,
+            type: 'keydown',
+            options: { capture: true },
+            toMessage: escapeFromKeyboard,
+          }),
+      },
+    ),
+  }),
+)
+
 const musicActivationSubscription = Subscription.make<Model, Message>()(
   entry => ({
     musicActivation: entry(
@@ -641,6 +685,7 @@ export const subscriptions = Subscription.aggregate<
   sketchSubscriptions,
   settingsSubscriptions,
   audioSettingsSubscriptions,
+  escapeNavigationSubscription,
   musicActivationSubscription,
   musicPlaybackSubscription,
 )

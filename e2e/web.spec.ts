@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import * as Arr from 'effect/Array'
 
 test('pages preserve the canonical scene composition', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 1200 })
@@ -100,6 +101,33 @@ test('the main menu navigates between Foldkit routes', async ({ page }) => {
   await expect(settingsHomeLabel).toHaveCSS('opacity', '0')
   await expect(settingsHomeIcon).toHaveCSS('opacity', '1')
   await expect(page.locator('link[rel="manifest"]')).toHaveCount(1)
+})
+
+test('Escape returns every page to the main menu', async ({ page }) => {
+  const pages = [
+    ['/sketch', 'sketch-workspace'],
+    ['/archivify', 'archivify-page'],
+    ['/interrogation', 'interrogation-splash'],
+    ['/interview', 'interview-splash'],
+    ['/settings', 'settings-page'],
+    ['/not-found', 'not-found-splash'],
+  ] as const
+
+  await Arr.reduce(
+    pages,
+    Promise.resolve(),
+    (previous, [path, testId]) =>
+      previous.then(async () => {
+        await page.goto(path)
+        await expect(page.getByTestId(testId)).toBeVisible()
+        await page.keyboard.press('Escape')
+        await expect(page).toHaveURL(/\/$/)
+        await expect(page.getByRole('heading', { name: 'Dojo' })).toBeVisible()
+      }),
+  )
+
+  await page.keyboard.press('Escape')
+  await expect(page).toHaveURL(/\/$/)
 })
 
 test('audio settings apply immediately and persist locally', async ({ page }) => {
@@ -248,6 +276,10 @@ test('the web app is installable as a PWA', async ({ browserName, page }) => {
 test('the sketch persists drawings and clears them by shortcut', async ({ page }) => {
   await page.goto('/sketch')
   await expect(page.getByRole('button', { name: 'Draw' })).toBeEnabled()
+  await expect(page.locator('.tl-background')).toHaveCSS(
+    'background-color',
+    'rgb(239, 225, 194)',
+  )
   await expect(page.locator('.sketch-action-hint')).toHaveText([
     'Ctrl C',
     'Ctrl Enter',
