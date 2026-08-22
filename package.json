@@ -63,6 +63,7 @@
     "package": "bun run build && bun run --cwd packages/desktop package",
     "test": "bun run --cwd packages/shared test && bun run --cwd packages/bindings/openai test && bun run --cwd packages/app test",
     "test:e2e": "bun run build && playwright test",
+    "test:production": "playwright test --config playwright.production.config.ts",
     "typecheck": "bun run --cwd packages/shared typecheck && bun run --cwd packages/bindings/openai typecheck && bun run --cwd packages/app typecheck && bun run --cwd packages/desktop typecheck && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p e2e/tsconfig.json",
     "lint": "oxlint --type-aware --type-check --report-unused-disable-directives .",
     "format": "dprint fmt",

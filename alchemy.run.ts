@@ -1,5 +1,6 @@
 import * as Alchemy from 'alchemy'
 import * as Cloudflare from 'alchemy/Cloudflare'
+import * as Config from 'effect/Config'
 import * as Effect from 'effect/Effect'
 
 const dojoZoneId = 'f8f6d600065554887859b55240cdd98e'
@@ -22,6 +23,9 @@ export default Alchemy.Stack(
 
     const website = yield* Cloudflare.Website.Vite('Website', {
       rootDir: 'packages/app',
+      env: {
+        VITE_TLDRAW_LICENSE_KEY: Config.redacted('TLDRAW_LICENSE_KEY'),
+      },
       assets: {
         notFoundHandling: 'single-page-application',
       },

@@ -26,8 +26,8 @@ export default defineConfig(({ command }) => ({
           .replace(
             '__DOJO_CONNECT_SRC__',
             command === 'serve'
-              ? "'self' https://api.openai.com ws://127.0.0.1:* ws://localhost:*"
-              : "'self' https://api.openai.com",
+              ? "'self' https://api.openai.com https://cdn.tldraw.com ws://127.0.0.1:* ws://localhost:*"
+              : "'self' https://api.openai.com https://cdn.tldraw.com",
           ),
     },
     foldkit({ devToolsMcpPort }),
