@@ -11,6 +11,7 @@ import { Slider } from '@foldkit/ui'
 import settingsArtUrl from '../../../../docs/generated-concept-art/06-inner-courtyard.png'
 import { type MusicPlaybackState, MusicPlayer } from '../audio/player.ts'
 import { AudioSettings, defaultAudioSettings, type Volume } from '../audio/settings.ts'
+import backIconUrl from '../icons/back.svg'
 
 const AUDIO_SETTINGS_STORAGE_KEY = 'dojo.audio-settings.v1'
 const AUDIO_SETTINGS_SAVE_DELAY = Duration.millis(180)
@@ -453,16 +454,26 @@ export const view = Submodel.defineView<Model, Message, ViewInputs>((
       h.section(
         [h.Class('settings-panel'), h.AriaLabel('Audio settings')],
         [
-          h.button(
+          h.div(
+            [h.Class('settings-home')],
             [
-              h.Type('button'),
-              h.Class('settings-home-button'),
-              h.AriaLabel('Return to Dojo'),
-              h.OnClick(ClickedClose()),
-            ],
-            [
-              h.span([h.Class('settings-home-arrow')]),
-              h.span([h.Class('settings-home-label')], ['Dojo']),
+              h.button([
+                h.Type('button'),
+                h.Class('settings-home-button'),
+                h.AriaLabel('Return to Dojo'),
+                h.OnClick(ClickedClose()),
+              ]),
+              h.span(
+                [h.Class('settings-home-mark')],
+                [
+                  h.span([h.Class('settings-home-label')], ['Dojo']),
+                  h.img([
+                    h.Src(backIconUrl),
+                    h.Alt(''),
+                    h.Class('settings-home-icon'),
+                  ]),
+                ],
+              ),
             ],
           ),
           h.header(

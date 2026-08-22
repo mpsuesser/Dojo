@@ -9,8 +9,8 @@ import * as Submodel from 'foldkit/submodel'
 import type * as Update from 'foldkit/update'
 
 import sketchArtUrl from '../../../../docs/generated-concept-art/02-hall-of-form.png'
+import backIconUrl from '../icons/back.svg'
 import * as EditorAdapter from './editor.ts'
-import backIconUrl from './icons/back.svg'
 import circleIconUrl from './icons/circle.svg'
 import drawIconUrl from './icons/draw.svg'
 import eraseIconUrl from './icons/erase.svg'
@@ -52,6 +52,7 @@ const Shortcut = Schema.Literals([
   'Select',
   'PreviousColor',
   'NextColor',
+  'Clear',
   'CopyImage',
 ])
 
@@ -204,8 +205,9 @@ const shiftedColor = (
   direction: -1 | 1,
 ): SketchColor => {
   const current = Option.getOrElse(Arr.findFirstIndex(colors, value => value === color), () => 0)
+  const next = (current + direction + colors.length) % colors.length
   return Option.getOrElse(
-    Arr.get(colors, Math.min(Math.max(current + direction, 0), colors.length - 1)),
+    Arr.get(colors, next),
     () => color,
   )
 }
@@ -250,6 +252,17 @@ const handleShortcut = (
     M.when('Select', () => selectMode(model, 'select')),
     M.when('PreviousColor', () => selectColor(model, shiftedColor(model.activeColor, -1))),
     M.when('NextColor', () => selectColor(model, shiftedColor(model.activeColor, 1))),
+    M.when('Clear', () =>
+      model.shapeCount === 0
+        ? [model, [], Option.none()]
+        : [
+          evo(model, {
+            activeMode: () => 'draw',
+            feedback: () => Option.none(),
+          }),
+          [ClearEditor()],
+          Option.none(),
+        ]),
     M.when('CopyImage', () =>
       model.shapeCount === 0 || model.copyState === 'Copying'
         ? [model, [], Option.none()]
@@ -294,17 +307,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       SelectedMode: ({ mode }) => selectMode(model, mode),
       SelectedColor: ({ color }) => selectColor(model, color),
-      ClickedClear: () =>
-        model.shapeCount === 0
-          ? [model, [], Option.none()]
-          : [
-            evo(model, {
-              activeMode: () => 'draw',
-              feedback: () => Option.none(),
-            }),
-            [ClearEditor()],
-            Option.none(),
-          ],
+      ClickedClear: () => handleShortcut(model, 'Clear'),
       ClickedCopyImage: () => handleShortcut(model, 'CopyImage'),
       ClickedClose: () => [model, [], Option.some(RequestedClose())],
       PressedShortcut: ({ shortcut }) => handleShortcut(model, shortcut),
@@ -393,7 +396,9 @@ const shortcutFromKeyboard = (event: KeyboardEvent): Option.Option<Message> => {
     return Option.none()
   }
 
-  const shortcut = event.metaKey || event.ctrlKey
+  const shortcut = event.ctrlKey && event.code === 'KeyC'
+    ? Option.some<typeof Shortcut.Type>('Clear')
+    : event.metaKey || event.ctrlKey
     ? event.key === 'Enter'
       ? Option.some<typeof Shortcut.Type>('CopyImage')
       : Option.none()
@@ -665,19 +670,43 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
       h.div(
         [h.Class('sketch-actions')],
         [
-          button(
-            'Clear',
-            'sketch-button sketch-button-quiet',
-            !isReady || isCopying || model.shapeCount === 0,
-            ClickedClear(),
-            h,
+          h.div(
+            [h.Class('sketch-action')],
+            [
+              button(
+                'Clear',
+                'sketch-button sketch-button-quiet',
+                !isReady || isCopying || model.shapeCount === 0,
+                ClickedClear(),
+                h,
+              ),
+              h.span(
+                [
+                  h.Class('sketch-palette-hint sketch-action-hint'),
+                  h.Attribute('aria-hidden', 'true'),
+                ],
+                ['Ctrl C'],
+              ),
+            ],
           ),
-          button(
-            copyLabel,
-            'sketch-button sketch-button-primary',
-            !isReady || isCopying || model.shapeCount === 0,
-            ClickedCopyImage(),
-            h,
+          h.div(
+            [h.Class('sketch-action')],
+            [
+              button(
+                copyLabel,
+                'sketch-button sketch-button-primary',
+                !isReady || isCopying || model.shapeCount === 0,
+                ClickedCopyImage(),
+                h,
+              ),
+              h.span(
+                [
+                  h.Class('sketch-palette-hint sketch-action-hint'),
+                  h.Attribute('aria-hidden', 'true'),
+                ],
+                ['Ctrl Enter'],
+              ),
+            ],
           ),
         ],
       ),

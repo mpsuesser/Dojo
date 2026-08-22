@@ -26,6 +26,13 @@ test('settings controls retain usable mobile hit areas', async ({ page }) => {
   if (!bounds) return
   expect(bounds.width).toBeGreaterThanOrEqual(40)
   expect(bounds.height).toBeGreaterThanOrEqual(40)
+
+  const homeButton = page.getByRole('button', { name: 'Return to Dojo' })
+  const homeBounds = await homeButton.boundingBox()
+  expect(homeBounds).not.toBeNull()
+  if (!homeBounds) return
+  expect(homeBounds.width).toBeGreaterThanOrEqual(40)
+  expect(homeBounds.height).toBeGreaterThanOrEqual(40)
 })
 
 test('the main menu navigates between Foldkit routes', async ({ page }) => {
@@ -59,6 +66,24 @@ test('the main menu navigates between Foldkit routes', async ({ page }) => {
   await page.goto('/settings')
   await expect(page.getByTestId('settings-page')).toBeVisible()
   await expect(page.getByRole('slider', { name: 'Master Volume' })).toBeVisible()
+  const settingsHomeButton = page.getByRole('button', {
+    name: 'Return to Dojo',
+  })
+  const settingsHomeMark = page.locator('.settings-home-mark')
+  const settingsHomeLabel = page.locator('.settings-home-label')
+  const settingsHomeIcon = page.locator('.settings-home-icon')
+  const settingsHomeBounds = await settingsHomeButton.boundingBox()
+  const settingsHomeMarkBounds = await settingsHomeMark.boundingBox()
+  expect(settingsHomeBounds).not.toBeNull()
+  expect(settingsHomeMarkBounds).not.toBeNull()
+  if (!settingsHomeBounds || !settingsHomeMarkBounds) return
+  expect(settingsHomeBounds.width / settingsHomeMarkBounds.width).toBeCloseTo(1.5, 1)
+  expect(settingsHomeBounds.height / settingsHomeMarkBounds.height).toBeCloseTo(1.5, 1)
+  await expect(settingsHomeLabel).toHaveCSS('opacity', '1')
+  await expect(settingsHomeIcon).toHaveCSS('opacity', '0')
+  await settingsHomeButton.hover()
+  await expect(settingsHomeLabel).toHaveCSS('opacity', '0')
+  await expect(settingsHomeIcon).toHaveCSS('opacity', '1')
   await expect(page.locator('link[rel="manifest"]')).toHaveCount(1)
 })
 
@@ -205,9 +230,20 @@ test('the web app is installable as a PWA', async ({ browserName, page }) => {
   expect(installabilityErrors).toEqual([])
 })
 
-test('the sketch persists drawings and clears them directly', async ({ page }) => {
+test('the sketch persists drawings and clears them by shortcut', async ({ page }) => {
   await page.goto('/sketch')
   await expect(page.getByRole('button', { name: 'Draw' })).toBeEnabled()
+  await expect(page.locator('.sketch-action-hint')).toHaveText([
+    'Ctrl C',
+    'Ctrl Enter',
+  ])
+  const blackSwatch = page.getByRole('button', { name: 'Use black' })
+  const redSwatch = page.getByRole('button', { name: 'Use red' })
+  await expect(blackSwatch).toHaveAttribute('aria-pressed', 'true')
+  await page.keyboard.press('Shift+a')
+  await expect(redSwatch).toHaveAttribute('aria-pressed', 'true')
+  await page.keyboard.press('Shift+d')
+  await expect(blackSwatch).toHaveAttribute('aria-pressed', 'true')
 
   const editor = page.getByTestId('sketch-editor')
   const bounds = await editor.boundingBox()
@@ -244,7 +280,7 @@ test('the sketch persists drawings and clears them directly', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Draw' })).toBeEnabled()
   await expect(page.getByRole('button', { name: 'Clear' })).toBeEnabled()
 
-  await page.getByRole('button', { name: 'Clear' }).click()
+  await page.keyboard.press('Control+c')
   await expect(page.getByRole('button', { name: 'Clear' })).toBeDisabled()
 
   await page.getByRole('button', { name: 'Return to Dojo' }).click()

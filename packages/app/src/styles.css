@@ -296,55 +296,67 @@ body {
   box-shadow: 0 0 1rem rgb(111 153 222 / 32%);
 }
 
-.settings-home-button {
-  display: inline-flex;
-  align-items: center;
+.settings-home {
+  position: relative;
+  display: inline-grid;
+  place-items: center start;
   align-self: flex-start;
-  gap: 0.62rem;
-  min-height: 1.8rem;
-  padding: 0.1rem 0.2rem;
-  border: 0;
   color: rgb(199 211 232 / 67%);
-  background: transparent;
-  font: inherit;
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 0.62rem;
   font-weight: 720;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  cursor: pointer;
-  transition: color 140ms ease, transform 140ms ease;
 }
 
-.settings-home-arrow {
-  position: relative;
-  width: 1.35rem;
-  height: 1px;
-  background: currentcolor;
-}
-
-.settings-home-arrow::before {
+.settings-home-button {
   position: absolute;
-  top: -0.23rem;
-  left: 0;
-  width: 0.48rem;
-  height: 0.48rem;
-  content: '';
-  border-bottom: 1px solid currentcolor;
-  border-left: 1px solid currentcolor;
-  transform: rotate(45deg);
+  z-index: 1;
+  inset: -25%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
-.settings-home-button:hover,
-.settings-home-button:focus-visible {
-  color: #f0c98e;
-  outline: none;
-  transform: translateX(-0.15rem);
+.settings-home-mark {
+  position: relative;
+  display: inline-block;
+  width: 4.15em;
+  height: 1em;
+}
+
+.settings-home-label,
+.settings-home-icon {
+  position: absolute;
+  inset: 0;
+  transition: opacity 120ms ease;
+}
+
+.settings-home-label {
+  text-align: left;
+}
+
+.settings-home-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  opacity: 0;
+}
+
+.settings-home-button:hover + .settings-home-mark .settings-home-label,
+.settings-home-button:focus-visible + .settings-home-mark .settings-home-label {
+  opacity: 0;
+}
+
+.settings-home-button:hover + .settings-home-mark .settings-home-icon,
+.settings-home-button:focus-visible + .settings-home-mark .settings-home-icon {
+  opacity: 1;
 }
 
 .settings-home-button:focus-visible {
-  text-decoration: underline;
-  text-underline-offset: 0.3rem;
+  outline: 1px solid #c89e6d;
+  outline-offset: 0.25rem;
 }
 
 .settings-header {
@@ -576,23 +588,16 @@ body {
     padding: 2rem 3rem;
   }
 
-  .settings-home-button {
+  .settings-home {
     grid-column: 1;
     grid-row: 1;
-    gap: 1.5rem;
     min-width: 10rem;
     min-height: 10rem;
     font-size: 2.25rem;
   }
 
-  .settings-home-arrow {
-    width: 4rem;
-  }
-
-  .settings-home-arrow::before {
-    top: -0.7rem;
-    width: 1.4rem;
-    height: 1.4rem;
+  .settings-home-button {
+    inset: 0;
   }
 
   .settings-header {
@@ -674,7 +679,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .settings-home-button {
+  .settings-home-label,
+  .settings-home-icon {
     transition: none;
   }
 }
@@ -837,6 +843,16 @@ body {
   justify-content: flex-end;
   justify-self: end;
   gap: 0.38rem;
+}
+
+.sketch-action {
+  display: grid;
+  justify-items: center;
+  gap: 0.28rem;
+}
+
+.sketch-action-hint {
+  white-space: nowrap;
 }
 
 .sketch-button,
