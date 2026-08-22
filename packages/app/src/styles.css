@@ -1,6 +1,8 @@
 :root {
   color-scheme: dark;
   background: #050303;
+  /* Preserve the 16px root size at 1440x864 without transforming interactive content. */
+  font-size: min(calc(100vw / 90), calc(100vh / 54));
   font-family: Georgia, 'Times New Roman', serif;
 }
 
@@ -27,18 +29,15 @@ body {
 }
 
 .scene-stage {
-  --scene-width: 1440px;
-  --scene-height: 864px;
   position: absolute;
   top: 50%;
   left: 50%;
-  width: var(--scene-width);
-  height: var(--scene-height);
+  width: min(100vw, calc(100vh * 5 / 3));
+  height: min(100vh, calc(100vw * 3 / 5));
   container-type: size;
   overflow: hidden;
   background: #050303;
-  transform: translate(-50%, -50%) scale(min(calc(100vw / var(--scene-width)), calc(100vh / var(--scene-height))));
-  transform-origin: center;
+  transform: translate(-50%, -50%);
 }
 
 .dojo-shell,

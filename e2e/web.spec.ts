@@ -214,13 +214,22 @@ test('the sketch persists drawings and clears them directly', async ({ page }) =
   expect(bounds).not.toBeNull()
   if (!bounds) return
 
-  await page.mouse.move(bounds.x + bounds.width * 0.3, bounds.y + bounds.height * 0.35)
+  const strokeStart = {
+    x: bounds.x + bounds.width * 0.3,
+    y: bounds.y + bounds.height * 0.35,
+  }
+  await page.mouse.move(strokeStart.x, strokeStart.y)
   await page.mouse.down()
   await page.mouse.move(bounds.x + bounds.width * 0.65, bounds.y + bounds.height * 0.62, {
     steps: 8,
   })
   await page.mouse.up()
   await expect(page.getByRole('button', { name: 'Clear' })).toBeEnabled()
+  const strokeBounds = await editor.locator('.tl-shape').boundingBox()
+  expect(strokeBounds).not.toBeNull()
+  if (!strokeBounds) return
+  expect(strokeBounds.x).toBeCloseTo(strokeStart.x, 0)
+  expect(strokeBounds.y).toBeCloseTo(strokeStart.y, 0)
   await page.waitForFunction(() => {
     const sync = Reflect.get(window, 'tlsync')
     return (
