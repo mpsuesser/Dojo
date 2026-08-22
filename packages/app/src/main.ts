@@ -10,7 +10,6 @@ import { toString as urlToString, Url } from 'foldkit/url'
 import dojoArtUrl from '../../../docs/generated-concept-art/01-the-dojo.png'
 import interrogationArtUrl from '../../../docs/generated-concept-art/03-hall-of-questions.png'
 import archivifyArtUrl from '../../../docs/generated-concept-art/08-hall-of-memory.png'
-import interviewArtUrl from '../../../docs/generated-concept-art/10-interview-conversation-refined.png'
 import {
   MusicPlaybackError,
   MusicPlaybackState,
@@ -19,6 +18,7 @@ import {
 } from './audio/player.ts'
 import { AudioSettings } from './audio/settings.ts'
 import backIconUrl from './icons/back.svg'
+import * as Interview from './interview/main.ts'
 import {
   AppRoute,
   archivifyRouter,
@@ -35,10 +35,16 @@ import * as Sketch from './sketch/main.ts'
 
 export class Flags extends Schema.Class<Flags>('Flags')({
   audioSettings: AudioSettings,
+  openAiApiKey: Settings.OpenAiApiKey,
+  interviewSessions: Schema.Array(Interview.InterviewSession),
 }) {}
 
-export const flags: Effect.Effect<Flags> = Settings.loadAudioSettings.pipe(
-  Effect.map(audioSettings => new Flags({ audioSettings })),
+export const flags: Effect.Effect<Flags> = Effect.all({
+  audioSettings: Settings.loadAudioSettings,
+  openAiApiKey: Settings.loadOpenAiApiKey,
+  interviewSessions: Interview.loadInterviewSessions,
+}, { concurrency: 3 }).pipe(
+  Effect.map(values => new Flags(values)),
 )
 
 export const Model = Schema.Struct({
@@ -47,6 +53,7 @@ export const Model = Schema.Struct({
   musicPlaybackState: MusicPlaybackState,
   settings: Settings.Model,
   sketch: Sketch.Model,
+  interview: Interview.Model,
 })
 export type Model = typeof Model.Type
 
@@ -59,6 +66,9 @@ export const GotSketchMessage = m('GotSketchMessage', {
 })
 export const GotSettingsMessage = m('GotSettingsMessage', {
   message: Settings.Message,
+})
+export const GotInterviewMessage = m('GotInterviewMessage', {
+  message: Interview.Message,
 })
 export const InteractedWithPage = m('InteractedWithPage')
 export const PressedEscape = m('PressedEscape')
@@ -76,6 +86,7 @@ export const Message = Schema.Union([
   ChangedUrl,
   GotSketchMessage,
   GotSettingsMessage,
+  GotInterviewMessage,
   InteractedWithPage,
   PressedEscape,
   SucceededStartMusic,
@@ -100,14 +111,21 @@ export const init: Runtime.RoutingApplicationInit<
   Message,
   Flags,
   MusicPlayer,
-  Sketch.EditorService
+  Sketch.EditorService | Interview.RealtimeInterviewService
 > = (startupFlags, url: Url) => [
   {
     route: urlToAppRoute(url),
     protocol: url.protocol,
     musicPlaybackState: 'StartingAutoplay',
-    settings: Settings.init(startupFlags.audioSettings),
+    settings: Settings.init(
+      startupFlags.audioSettings,
+      startupFlags.openAiApiKey,
+    ),
     sketch: Sketch.init(),
+    interview: Interview.init(
+      startupFlags.openAiApiKey,
+      startupFlags.interviewSessions,
+    ),
   },
   [],
 ]
@@ -118,6 +136,32 @@ type UpdateReturn = readonly [
 ]
 
 const withUpdateReturn = M.withReturnType<UpdateReturn>()
+
+const updateInterview = (
+  model: Model,
+  interviewMessage: Interview.Message,
+): UpdateReturn => {
+  const [interview, interviewCommands, maybeOutMessage] = Interview.update(
+    model.interview,
+    interviewMessage,
+  )
+  const commands = Command.mapMessages(
+    interviewCommands,
+    message => GotInterviewMessage({ message }),
+  )
+  return Option.match(maybeOutMessage, {
+    onNone: () => [evo(model, { interview: () => interview }), commands],
+    onSome: () => [
+      evo(model, { interview: () => interview }),
+      [
+        ...commands,
+        NavigateInternal({
+          url: navigationHref(model.protocol, homeRouter()),
+        }),
+      ],
+    ],
+  })
+}
 
 export const update = (model: Model, message: Message): UpdateReturn =>
   M.value(message).pipe(
@@ -137,17 +181,42 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           }),
         ),
       ChangedUrl: ({ url }) => {
+        const nextRoute = urlToAppRoute(url)
         const settings = M.value(model.route).pipe(
           M.tag('Settings', () => Settings.cancelActiveDrags(model.settings)),
           M.orElse(() => model.settings),
         )
+        const [interview, interviewCommands] = M.value(model.route).pipe(
+          M.withReturnType<
+            readonly [
+              Interview.Model,
+              ReadonlyArray<Command.Command<Interview.Message>>,
+            ]
+          >(),
+          M.tag('Interview', () =>
+            M.value(nextRoute).pipe(
+              M.withReturnType<
+                readonly [
+                  Interview.Model,
+                  ReadonlyArray<Command.Command<Interview.Message>>,
+                ]
+              >(),
+              M.tag('Interview', () => [model.interview, []]),
+              M.orElse(() => Interview.pauseForNavigation(model.interview)),
+            )),
+          M.orElse(() => [model.interview, []]),
+        )
         return [
           evo(model, {
-            route: () => urlToAppRoute(url),
+            route: () => nextRoute,
             protocol: () => url.protocol,
             settings: () => settings,
+            interview: () => interview,
           }),
-          [],
+          Command.mapMessages(
+            interviewCommands,
+            message => GotInterviewMessage({ message }),
+          ),
         ]
       },
       GotSketchMessage: ({ message: sketchMessage }) => {
@@ -182,9 +251,26 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           message => GotSettingsMessage({ message }),
         )
         return Option.match(maybeOutMessage, {
-          onNone: () => [evo(model, { settings: () => settings }), commands],
+          onNone: () => [
+            evo(model, {
+              settings: () => settings,
+              interview: interview =>
+                Interview.setOpenAiApiKey(
+                  interview,
+                  settings.openAiApiKey,
+                ),
+            }),
+            commands,
+          ],
           onSome: () => [
-            evo(model, { settings: () => settings }),
+            evo(model, {
+              settings: () => settings,
+              interview: interview =>
+                Interview.setOpenAiApiKey(
+                  interview,
+                  settings.openAiApiKey,
+                ),
+            }),
             [
               ...commands,
               NavigateInternal({
@@ -194,6 +280,8 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           ],
         })
       },
+      GotInterviewMessage: ({ message: interviewMessage }) =>
+        updateInterview(model, interviewMessage),
       InteractedWithPage: () =>
         M.value(model.musicPlaybackState).pipe(
           withUpdateReturn,
@@ -209,6 +297,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         M.value(model.route).pipe(
           withUpdateReturn,
           M.tag('Home', () => [model, []]),
+          M.tag('Interview', () => updateInterview(model, Interview.ClickedClose())),
           M.orElse(() => [
             model,
             [
@@ -466,16 +555,16 @@ const routeDocument = M.type<AppRoute>().pipe(
     }),
     Interview: () => ({
       title: 'Interview | Dojo',
-      bodyView: (model: Model, h: HtmlBuilder<Message>) =>
-        featureSplashView(
-          model.protocol,
-          interviewArtUrl,
-          'Two focused speakers sharing a resonant conversation in the Hall of Voices',
-          'interview-splash',
-          'Hall of Voices',
-          'Interview',
-          h,
-        ),
+      bodyView: (model, h) =>
+        h.submodel({
+          slotId: 'interview',
+          model: model.interview,
+          view: Interview.view,
+          viewInputs: {
+            settingsHref: navigationHref(model.protocol, settingsRouter()),
+          },
+          toParentMessage: message => GotInterviewMessage({ message }),
+        }),
     }),
     Settings: () => ({
       title: 'Settings | Dojo',
@@ -520,13 +609,31 @@ const sketchModel = (model: Model): Option.Option<Sketch.Model> =>
     M.orElse(() => Option.none()),
   )
 
-export const managedResources = ManagedResource.lift(Sketch.managedResources)<
+const sketchManagedResources = ManagedResource.lift(Sketch.managedResources)<
   Model,
   Message
 >({
   toChildModel: sketchModel,
   toParentMessage: message => GotSketchMessage({ message }),
 })
+
+const interviewModel = (model: Model): Option.Option<Interview.Model> =>
+  M.value(model.route).pipe(
+    M.tag('Interview', () => Option.some(model.interview)),
+    M.orElse(() => Option.none()),
+  )
+
+const interviewManagedResources = ManagedResource.lift(
+  Interview.managedResources,
+)<Model, Message>({
+  toChildModel: interviewModel,
+  toParentMessage: message => GotInterviewMessage({ message }),
+})
+
+export const managedResources = ManagedResource.aggregate<Model, Message>()(
+  sketchManagedResources,
+  interviewManagedResources,
+)
 
 const sketchSubscriptions = Subscription.lift(Sketch.subscriptions)<
   Model,
@@ -557,6 +664,14 @@ const audioSettingsSubscriptions = Subscription.lift(
 )<Model, Message>({
   toChildModel: model => model.settings,
   toParentMessage: message => GotSettingsMessage({ message }),
+})
+
+const interviewSubscriptions = Subscription.lift(Interview.subscriptions)<
+  Model,
+  Message
+>({
+  toChildModel: model => model.interview,
+  toParentMessage: message => GotInterviewMessage({ message }),
 })
 
 const isWaitingForMusicInteraction = (
@@ -680,11 +795,12 @@ const musicPlaybackSubscription = Subscription.make<
 export const subscriptions = Subscription.aggregate<
   Model,
   Message,
-  MusicPlayer | Sketch.EditorService
+  MusicPlayer | Sketch.EditorService | Interview.RealtimeInterviewService
 >()(
   sketchSubscriptions,
   settingsSubscriptions,
   audioSettingsSubscriptions,
+  interviewSubscriptions,
   escapeNavigationSubscription,
   musicActivationSubscription,
   musicPlaybackSubscription,

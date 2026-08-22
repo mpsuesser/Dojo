@@ -1,4 +1,5 @@
 import { Duration, Effect, Match as M, Option, Stream } from 'effect'
+import * as Redacted from 'effect/Redacted'
 import * as Schema from 'effect/Schema'
 import { Command, Subscription } from 'foldkit'
 import type { Html, HtmlBuilder } from 'foldkit/html'
@@ -12,10 +13,18 @@ import settingsArtUrl from '../../../../docs/generated-concept-art/06-inner-cour
 import { type MusicPlaybackState, MusicPlayer } from '../audio/player.ts'
 import { AudioSettings, defaultAudioSettings, type Volume } from '../audio/settings.ts'
 import backIconUrl from '../icons/back.svg'
+import visibilityOffIconUrl from '../icons/visibility-off.svg'
+import visibilityIconUrl from '../icons/visibility.svg'
+import { emptyOpenAiApiKey, OpenAiApiKey, OpenAiApiKeyFromValue } from '../openai/api-key.ts'
+
+export { emptyOpenAiApiKey, hasOpenAiApiKey, OpenAiApiKey } from '../openai/api-key.ts'
 
 const AUDIO_SETTINGS_STORAGE_KEY = 'dojo.audio-settings.v1'
-const AUDIO_SETTINGS_SAVE_DELAY = Duration.millis(180)
+const OPENAI_API_KEY_STORAGE_KEY = 'dojo.openai-api-key.v1'
+const SETTINGS_SAVE_DELAY = Duration.millis(180)
 const AudioSettingsJson = Schema.fromJsonString(AudioSettings)
+
+const OpenAiApiKeyJson = Schema.fromJsonString(OpenAiApiKeyFromValue)
 
 class AudioSettingsStorageError extends Schema.TaggedError<AudioSettingsStorageError>()(
   'AudioSettingsStorageError',
@@ -24,6 +33,15 @@ class AudioSettingsStorageError extends Schema.TaggedError<AudioSettingsStorageE
     cause: Schema.Defect(),
   },
   { description: 'Browser storage was unavailable for audio settings.' },
+) {}
+
+class OpenAiApiKeyStorageError extends Schema.TaggedError<OpenAiApiKeyStorageError>()(
+  'OpenAiApiKeyStorageError',
+  {
+    operation: Schema.Literals(['Read', 'Write']),
+    cause: Schema.Defect(),
+  },
+  { description: 'Browser storage was unavailable for the OpenAI API key.' },
 ) {}
 
 const readStoredAudioSettings = Effect.fn('AudioSettings.readStored')(
@@ -48,6 +66,28 @@ export const loadAudioSettings: Effect.Effect<AudioSettings> = readStoredAudioSe
   ),
 )
 
+const readStoredOpenAiApiKey = Effect.fn('OpenAiApiKey.readStored')(
+  function* () {
+    const stored = yield* Effect.try({
+      try: () => localStorage.getItem(OPENAI_API_KEY_STORAGE_KEY),
+      catch: cause => new OpenAiApiKeyStorageError({ operation: 'Read', cause }),
+    })
+    return yield* Option.match(Option.fromNullishOr(stored), {
+      onNone: () => Effect.succeed(emptyOpenAiApiKey),
+      onSome: Schema.decodeUnknownEffect(OpenAiApiKeyJson),
+    })
+  },
+)
+
+/** Load the locally stored OpenAI key without exposing it to logs. */
+export const loadOpenAiApiKey: Effect.Effect<OpenAiApiKey> = readStoredOpenAiApiKey().pipe(
+  Effect.catch(() =>
+    Effect.logWarning(
+      'Stored OpenAI credentials were unavailable; continuing without a key.',
+    ).pipe(Effect.as(emptyOpenAiApiKey))
+  ),
+)
+
 const saveAudioSettings = Effect.fn('AudioSettings.save')(function* (
   settings: AudioSettings,
 ) {
@@ -61,14 +101,35 @@ const saveAudioSettings = Effect.fn('AudioSettings.save')(function* (
 const persistAudioSettings = Effect.fn('AudioSettings.persist')(function* (
   settings: AudioSettings,
 ) {
-  yield* Effect.sleep(AUDIO_SETTINGS_SAVE_DELAY)
+  yield* Effect.sleep(SETTINGS_SAVE_DELAY)
   yield* saveAudioSettings(settings).pipe(
     Effect.catch(() => Effect.logWarning('Audio settings could not be persisted.')),
   )
 })
 
+const saveOpenAiApiKey = Effect.fn('OpenAiApiKey.save')(function* (
+  apiKey: OpenAiApiKey,
+) {
+  const encoded = yield* Schema.encodeUnknownEffect(OpenAiApiKeyJson)(apiKey)
+  yield* Effect.try({
+    try: () => localStorage.setItem(OPENAI_API_KEY_STORAGE_KEY, encoded),
+    catch: cause => new OpenAiApiKeyStorageError({ operation: 'Write', cause }),
+  })
+})
+
+const persistOpenAiApiKey = Effect.fn('OpenAiApiKey.persist')(function* (
+  apiKey: OpenAiApiKey,
+) {
+  yield* Effect.sleep(SETTINGS_SAVE_DELAY)
+  yield* saveOpenAiApiKey(apiKey).pipe(
+    Effect.catch(() => Effect.logWarning('OpenAI credentials could not be persisted.')),
+  )
+})
+
 export const Model = Schema.Struct({
   audioSettings: AudioSettings,
+  openAiApiKey: OpenAiApiKey,
+  isOpenAiApiKeyVisible: Schema.Boolean,
   masterVolumeSlider: Slider.Model,
   musicVolumeSlider: Slider.Model,
   voiceVolumeSlider: Slider.Model,
@@ -77,6 +138,12 @@ export const Model = Schema.Struct({
 export type Model = typeof Model.Type
 
 export const ClickedClose = m('ClickedClose')
+export const ChangedOpenAiApiKey = m('ChangedOpenAiApiKey', {
+  value: OpenAiApiKey,
+})
+export const ToggledOpenAiApiKeyVisibility = m(
+  'ToggledOpenAiApiKeyVisibility',
+)
 export const GotMasterVolumeSliderMessage = m(
   'GotMasterVolumeSliderMessage',
   { message: Slider.Message },
@@ -94,6 +161,8 @@ export const GotSoundEffectsVolumeSliderMessage = m(
 
 export const Message = Schema.Union([
   ClickedClose,
+  ChangedOpenAiApiKey,
+  ToggledOpenAiApiKeyVisibility,
   GotMasterVolumeSliderMessage,
   GotMusicVolumeSliderMessage,
   GotVoiceVolumeSliderMessage,
@@ -109,8 +178,11 @@ const sliderModel = (id: string): Slider.Model => Slider.init({ id, min: 0, max:
 
 export const init = (
   audioSettings: AudioSettings = defaultAudioSettings,
+  openAiApiKey: OpenAiApiKey = emptyOpenAiApiKey,
 ): Model => ({
   audioSettings,
+  openAiApiKey,
+  isOpenAiApiKeyVisible: false,
   masterVolumeSlider: sliderModel('master-volume'),
   musicVolumeSlider: sliderModel('music-volume'),
   voiceVolumeSlider: sliderModel('voice-volume'),
@@ -224,6 +296,18 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     M.withReturnType<UpdateReturn>(),
     M.tagsExhaustive({
       ClickedClose: () => [model, [], Option.some(RequestedClose())],
+      ChangedOpenAiApiKey: ({ value }) => [
+        evo(model, { openAiApiKey: () => value }),
+        [],
+        Option.none(),
+      ],
+      ToggledOpenAiApiKeyVisibility: () => [
+        evo(model, {
+          isOpenAiApiKeyVisible: visible => !visible,
+        }),
+        [],
+        Option.none(),
+      ],
       GotMasterVolumeSliderMessage: ({ message: sliderMessage }) =>
         updateVolumeSlider(
           model,
@@ -323,7 +407,7 @@ export const subscriptions = Subscription.aggregate<Model, Message>()(
   soundEffectsVolumeSubscriptions,
 )
 
-/** Latest-wins audio application and quiet-period persistence. */
+/** Latest-wins settings application and quiet-period persistence. */
 export const audioSubscriptions = Subscription.make<
   Model,
   Message,
@@ -354,6 +438,16 @@ export const audioSubscriptions = Subscription.make<
         Stream.fromEffect(persistAudioSettings(audioSettings)).pipe(
           Stream.drain,
         ),
+    },
+  ),
+  persistOpenAiApiKey: entry(
+    { openAiApiKey: OpenAiApiKey },
+    {
+      modelToDependencies: model => ({
+        openAiApiKey: model.openAiApiKey,
+      }),
+      dependenciesToStream: ({ openAiApiKey }) =>
+        Stream.fromEffect(persistOpenAiApiKey(openAiApiKey)).pipe(Stream.drain),
     },
   ),
 }))
@@ -479,8 +573,8 @@ export const view = Submodel.defineView<Model, Message, ViewInputs>((
           h.header(
             [h.Class('settings-header')],
             [
-              h.p([h.Class('settings-kicker')], ['Audio configuration']),
-              h.h1([h.Class('settings-title')], ['Sound']),
+              h.p([h.Class('settings-kicker')], ['Dojo configuration']),
+              h.h1([h.Class('settings-title')], ['Settings']),
               h.div([h.Class('settings-title-rule')]),
             ],
           ),
@@ -519,6 +613,72 @@ export const view = Submodel.defineView<Model, Message, ViewInputs>((
                 message => GotSoundEffectsVolumeSliderMessage({ message }),
                 h,
               ),
+            ],
+          ),
+          h.section(
+            [h.Class('settings-api'), h.AriaLabel('OpenAI configuration')],
+            [
+              h.div(
+                [h.Class('settings-api-heading')],
+                [
+                  h.label(
+                    [h.For('openai-api-key'), h.Class('settings-api-label')],
+                    ['OpenAI API Key'],
+                  ),
+                  h.span([h.Class('settings-api-description')], [
+                    'Required for realtime interviews',
+                  ]),
+                ],
+              ),
+              h.div(
+                [h.Class('settings-api-control')],
+                [
+                  h.input([
+                    h.Id('openai-api-key'),
+                    h.Type(model.isOpenAiApiKeyVisible ? 'text' : 'password'),
+                    h.Value(Redacted.value(model.openAiApiKey)),
+                    h.Class('settings-api-input'),
+                    h.Attribute('autocomplete', 'off'),
+                    h.Attribute('spellcheck', 'false'),
+                    h.OnInput(value =>
+                      ChangedOpenAiApiKey({
+                        value: Redacted.make(value, {
+                          label: 'OpenAI API key',
+                        }),
+                      })
+                    ),
+                  ]),
+                  h.button(
+                    [
+                      h.Type('button'),
+                      h.Class('settings-api-visibility'),
+                      h.AriaLabel(
+                        model.isOpenAiApiKeyVisible
+                          ? 'Hide OpenAI API key'
+                          : 'Show OpenAI API key',
+                      ),
+                      h.Attribute(
+                        'aria-pressed',
+                        model.isOpenAiApiKeyVisible ? 'true' : 'false',
+                      ),
+                      h.OnClick(ToggledOpenAiApiKeyVisibility()),
+                    ],
+                    [
+                      h.img([
+                        h.Src(
+                          model.isOpenAiApiKeyVisible
+                            ? visibilityOffIconUrl
+                            : visibilityIconUrl,
+                        ),
+                        h.Alt(''),
+                      ]),
+                    ],
+                  ),
+                ],
+              ),
+              h.p([h.Class('settings-api-note')], [
+                'Stored only in this local Dojo profile.',
+              ]),
             ],
           ),
           h.footer(

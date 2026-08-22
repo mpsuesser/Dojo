@@ -3,6 +3,7 @@ import { describe, expect, test } from '@effect/vitest'
 import { Slider } from '@foldkit/ui'
 
 import { defaultAudioSettings } from '../src/audio/settings.ts'
+import * as Interview from '../src/interview/main.ts'
 import {
   FailedStartMusic,
   InteractedWithPage,
@@ -22,6 +23,7 @@ const modelWithPlaybackState = (
   musicPlaybackState,
   settings: Settings.init(defaultAudioSettings),
   sketch: Sketch.init(),
+  interview: Interview.init(Settings.emptyOpenAiApiKey),
 })
 
 describe('audio lifecycle', () => {

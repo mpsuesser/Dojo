@@ -11,8 +11,12 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json"
   },
   "dependencies": {
+    "@dojo/openai": "workspace:*",
     "@dojo/shared": "workspace:*",
+    "@effect/ai-openai": "catalog:",
+    "@effect/platform-browser": "catalog:",
     "@foldkit/ui": "catalog:",
+    "@openai/agents": "catalog:",
     "@tldraw/assets": "catalog:",
     "effect": "catalog:",
     "foldkit": "catalog:",

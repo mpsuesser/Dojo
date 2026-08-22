@@ -32,8 +32,12 @@
     "packages/app": {
       "name": "@dojo/app",
       "dependencies": {
+        "@dojo/openai": "workspace:*",
         "@dojo/shared": "workspace:*",
+        "@effect/ai-openai": "catalog:",
+        "@effect/platform-browser": "catalog:",
         "@foldkit/ui": "catalog:",
+        "@openai/agents": "catalog:",
         "@tldraw/assets": "catalog:",
         "effect": "catalog:",
         "foldkit": "catalog:",
@@ -52,6 +56,18 @@
         "vite": "catalog:dev",
         "vite-plugin-pwa": "catalog:dev",
         "vitest": "catalog:dev",
+      },
+    },
+    "packages/bindings/openai": {
+      "name": "@dojo/openai",
+      "version": "0.0.0",
+      "dependencies": {
+        "@openai/agents": "catalog:",
+        "effect": "catalog:",
+      },
+      "devDependencies": {
+        "@effect/vitest": "catalog:dev",
+        "typescript": "catalog:dev",
       },
     },
     "packages/desktop": {
@@ -93,9 +109,12 @@
     "@effect/platform-node-shared": "4.0.0-rc.108",
   },
   "catalog": {
+    "@effect/ai-openai": "4.0.0-rc.108",
+    "@effect/platform-browser": "4.0.0-rc.108",
     "@effect/platform-bun": "4.0.0-rc.108",
     "@effect/platform-node": "4.0.0-rc.108",
     "@foldkit/ui": "0.145.0",
+    "@openai/agents": "0.11.8",
     "@tldraw/assets": "5.3.1",
     "alchemy": "2.0.0-beta.72",
     "effect": "4.0.0-rc.108",
@@ -407,6 +426,8 @@
 
     "@dojo/desktop": ["@dojo/desktop@workspace:packages/desktop"],
 
+    "@dojo/openai": ["@dojo/openai@workspace:packages/bindings/openai"],
+
     "@dojo/shared": ["@dojo/shared@workspace:packages/shared"],
 
     "@dprint/android-arm64": ["@dprint/android-arm64@0.56.0", "", { "os": "android", "cpu": "arm64" }, "sha512-aU3FhmOw2BkHOMhrd7EvNtdcvELJsdT8atdmaYT4WuKkADoK7yNkF+FfsJuVPY1fmYICWjptvNbelUEWW0nYcg=="],
@@ -439,7 +460,11 @@
 
     "@dprint/win32-x64": ["@dprint/win32-x64@0.56.0", "", { "os": "win32", "cpu": "x64" }, "sha512-goIeNrok/Fev/ae4OFdt7beuT6v1/myr8SzlSL7352tK0ldCsNzCGMyZzM3VT88jNf7f87bBsLgLkSXeiGXurQ=="],
 
+    "@effect/ai-openai": ["@effect/ai-openai@4.0.0-rc.108", "", { "peerDependencies": { "effect": "^4.0.0-rc.108" } }, "sha512-VA9T1qBuW7ehX3c0C3AJEDLAbutKeSpmnB9TQCo8x1ZseAOtMhjGtJ/Ptk0K39LD961mak103ubUuKjRT5zcTw=="],
+
     "@effect/language-service": ["@effect/language-service@0.87.2", "", { "bin": { "effect-language-service": "cli.js" } }, "sha512-CfiSoaVQO8pZgaMZGw5VvMvRGybsJ2LaSDoLYaqiVGvo/YYPYVR2GzUKY0h1NtIweq/+SQ5XLrvtzPIttWQ0GQ=="],
+
+    "@effect/platform-browser": ["@effect/platform-browser@4.0.0-rc.108", "", { "peerDependencies": { "effect": "^4.0.0-rc.108" } }, "sha512-u/q7G0e+KHvhvgf0leDTa2GGZ+NlUtghX1FwAtHQ8vfdyCB+ln61O7meNQBASDSsMLTfQ79qoTtSics6Ccj1zA=="],
 
     "@effect/platform-bun": ["@effect/platform-bun@4.0.0-rc.108", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-rc.108" }, "peerDependencies": { "effect": "^4.0.0-rc.108" } }, "sha512-27RoALzmzx6Qp4LrPIE8bYJfHe+8ZaAO3xLhJMEE6mVA8fxcPh4HAGwBv09Nk2qTFVh578SlSCY5ojUlqeSJ4A=="],
 
@@ -678,6 +703,14 @@
     "@octokit/webhooks": ["@octokit/webhooks@14.2.0", "", { "dependencies": { "@octokit/openapi-webhooks-types": "12.1.0", "@octokit/request-error": "^7.0.0", "@octokit/webhooks-methods": "^6.0.0" } }, "sha512-da6KbdNCV5sr1/txD896V+6W0iamFWrvVl8cHkBSPT+YlvmT3DwXa4jxZnQc+gnuTEqSWbBeoSZYTayXH9wXcw=="],
 
     "@octokit/webhooks-methods": ["@octokit/webhooks-methods@6.0.0", "", {}, "sha512-MFlzzoDJVw/GcbfzVC1RLR36QqkTLUf79vLVO3D+xn7r0QgxnFoLZgtrzxiQErAjFUOdH6fas2KeQJ1yr/qaXQ=="],
+
+    "@openai/agents": ["@openai/agents@0.11.8", "", { "dependencies": { "@openai/agents-core": "0.11.8", "@openai/agents-openai": "0.11.8", "@openai/agents-realtime": "0.11.8", "debug": "^4.4.0", "openai": "^6.35.0" }, "peerDependencies": { "zod": "^4.0.0" } }, "sha512-D4XHF2g+Ub/L9fRJT/xpuiCqHyxiKzZbi0BqQxnso42t+J049O/OSvVzFBcRskF4uPFAvs0TOOB7KBbanCwaYQ=="],
+
+    "@openai/agents-core": ["@openai/agents-core@0.11.8", "", { "dependencies": { "debug": "^4.4.0", "openai": "^6.35.0" }, "optionalDependencies": { "@modelcontextprotocol/sdk": "^1.26.0" }, "peerDependencies": { "zod": "^4.0.0" }, "optionalPeers": ["zod"] }, "sha512-TrE34RXXPoWYv2PjXf5hq3Eq+uvRJMNiY+Q5WBgEPjAg60yt2hya8cS2I8qkO6i25MjNJl37a25X0vL/gs5Wdg=="],
+
+    "@openai/agents-openai": ["@openai/agents-openai@0.11.8", "", { "dependencies": { "@openai/agents-core": "0.11.8", "debug": "^4.4.0", "openai": "^6.35.0" }, "peerDependencies": { "zod": "^4.0.0" } }, "sha512-XjHCnJPGapgZBlh8y5oxU7zV0hrAQTF5im6HpUwaPcH5CeRFLtc06VXLso0vJ5G3g9e/J5gIh3S1iAxiJqEAVQ=="],
+
+    "@openai/agents-realtime": ["@openai/agents-realtime@0.11.8", "", { "dependencies": { "@openai/agents-core": "0.11.8", "@types/ws": "^8.18.1", "debug": "^4.4.0", "ws": "^8.18.1" }, "peerDependencies": { "zod": "^4.0.0" } }, "sha512-i1qEGUE8GTW0neWgAc1aj/3wZFtstz8bVG2BvVbU/BzQbyhZV8j3CvndkMJGFfgeobvVmn2qGTV5Ry6ibfuxeQ=="],
 
     "@oxc-project/types": ["@oxc-project/types@0.139.0", "", {}, "sha512-r9gHphtCs+1M7J0pw6Sn/hh/Wpa/iQrOOkrNAlVLF/gHq+/CJmHIWKKUUhdWjcD6CIa8idarspCsASiXCXvFUw=="],
 
@@ -1940,6 +1973,8 @@
     "once": ["once@1.4.0", "", { "dependencies": { "wrappy": "1" } }, "sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w=="],
 
     "onetime": ["onetime@5.1.2", "", { "dependencies": { "mimic-fn": "^2.1.0" } }, "sha512-kbpaSSGJTWdAY5KPVeMOKXSrPtr8C8C7wodJbcsd51jRnmD+GZu8Y0VoU6Dm5Z4vWr0Ig/1NKuWRKf7j5aaYSg=="],
+
+    "openai": ["openai@6.49.0", "", { "peerDependencies": { "@aws-sdk/credential-provider-node": ">=3.972.0 <4", "@smithy/hash-node": ">=4.3.0 <5", "@smithy/signature-v4": ">=5.4.0 <6", "ws": "^8.18.0", "zod": "^3.25 || ^4.0" }, "optionalPeers": ["@aws-sdk/credential-provider-node", "@smithy/hash-node", "@smithy/signature-v4", "ws", "zod"] }, "sha512-aYCc0C6L864eR6WSYIwQGyXriw/nIyZx0ObvhzOEVuk0zoBDpynjSbrionWI7q65B5H8jJX0DXR9snEzM6bfPg=="],
 
     "orderedmap": ["orderedmap@2.1.1", "", {}, "sha512-TvAWxi0nDe1j/rtMcWcIj94+Ffe6n7zhow33h40SKxmsmozs6dz/e+EajymfoFcHd7sxNn8yHM8839uixMOV6g=="],
 

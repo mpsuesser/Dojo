@@ -1,0 +1,23 @@
+{
+  "name": "@dojo/openai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit --checkers 1 -p tsconfig.json",
+    "lint": "oxlint --report-unused-disable-directives .",
+    "test": "vitest run --root ../../.. packages/bindings/openai/test",
+    "clean": "rm -rf .tsbuildinfo"
+  },
+  "dependencies": {
+    "@openai/agents": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:dev",
+    "typescript": "catalog:dev"
+  }
+}

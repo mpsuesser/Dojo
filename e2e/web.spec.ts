@@ -74,9 +74,13 @@ test('the main menu navigates between Foldkit routes', async ({ page }) => {
   await expect(page).toHaveURL(/\/$/)
 
   await page.getByRole('link', { name: 'Interview' }).click()
+  await expect(page.getByTestId('interview-page')).toBeVisible()
   await expect(page.getByTestId('interview-splash')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Interview' })).toBeVisible()
-  await page.getByRole('link', { name: 'Return to Dojo' }).click()
+  await expect(
+    page.getByRole('button', { name: /Begin a new interview/ }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Return to Dojo' }).click()
   await expect(page).toHaveURL(/\/$/)
 
   await page.goto('/settings')
@@ -184,6 +188,76 @@ test('audio settings apply immediately and persist locally', async ({ page }) =>
   await expect(
     page.getByRole('slider', { name: 'Sound Effects Volume' }),
   ).toHaveAttribute('aria-valuenow', '100')
+})
+
+test('OpenAI credentials stay masked, toggle visibility, and persist', async ({ page }) => {
+  await page.goto('/settings')
+
+  const apiKey = page.locator('#openai-api-key')
+  await expect(apiKey).toHaveAttribute('type', 'password')
+  await apiKey.fill('sk-dojo-test-key')
+
+  const showKey = page.getByRole('button', { name: 'Show OpenAI API key' })
+  await showKey.click()
+  await expect(apiKey).toHaveAttribute('type', 'text')
+  await expect(apiKey).toHaveValue('sk-dojo-test-key')
+
+  await page.getByRole('button', { name: 'Hide OpenAI API key' }).click()
+  await expect(apiKey).toHaveAttribute('type', 'password')
+  await page.waitForFunction(() =>
+    localStorage.getItem('dojo.openai-api-key.v1')?.includes('sk-dojo-test-key')
+  )
+
+  await page.reload()
+  await expect(page.locator('#openai-api-key')).toHaveAttribute(
+    'type',
+    'password',
+  )
+  await expect(page.locator('#openai-api-key')).toHaveValue(
+    'sk-dojo-test-key',
+  )
+
+  await page.getByRole('button', { name: 'Return to Dojo' }).click()
+  await page.getByRole('link', { name: 'Interview' }).click()
+  await page.getByRole('button', { name: /Begin a new interview/ }).click()
+  await expect(
+    page.getByRole('button', { name: 'Begin interview' }),
+  ).toBeEnabled()
+})
+
+test('Interview configuration explains missing Realtime access and keeps drafts', async ({ page }) => {
+  await page.goto('/interview')
+  await page.getByRole('button', { name: /Begin a new interview/ }).click()
+
+  const objectives = page.getByRole('textbox', {
+    name: /Interview objectives/,
+  })
+  const context = page.getByRole('textbox', { name: /Background context/ })
+  await objectives.fill('Understand why the migration stalled.')
+  await context.fill('The team has attempted the migration twice.')
+
+  const begin = page.getByRole('button', { name: 'Begin interview' })
+  await expect(begin).toBeDisabled()
+  await page.locator('.interview-begin-wrap').hover()
+  const settingsLink = page.getByRole('link', { name: 'Settings' })
+  await expect(settingsLink).toBeVisible()
+  await expect(page.getByRole('tooltip')).toContainText(
+    "Interviews require access to OpenAI's realtime voice API.",
+  )
+  await expect(page.getByRole('tooltip')).toContainText(
+    "any text you've entered here will still be here when you return.",
+  )
+
+  await settingsLink.hover()
+  await expect(settingsLink).toBeVisible()
+  await settingsLink.click()
+  await expect(page).toHaveURL(/\/settings$/)
+  await page.goBack()
+  await expect(page).toHaveURL(/\/interview$/)
+  await expect(objectives).toHaveValue('Understand why the migration stalled.')
+  await expect(context).toHaveValue(
+    'The team has attempted the migration twice.',
+  )
 })
 
 test('audio settings fall back when local storage is unavailable', async ({ page }) => {

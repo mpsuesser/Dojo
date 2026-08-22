@@ -22,33 +22,72 @@ const validatedDevelopmentRendererUrl = Effect.runSync(
   }),
 )
 
-const { appIconPath, developmentRendererOrigin, rendererPath } = Effect.runSync(
+const { appIconPath, developmentRendererOrigin, rendererPath, rendererUrl } = Effect.runSync(
   Effect.gen(function* () {
     const path = yield* Path.Path
     const applicationDirectory = path.dirname(
       yield* path.fromFileUrl(new URL(import.meta.url)),
     )
+    const rendererPath = app.isPackaged
+      ? path.join(process.resourcesPath, 'app', 'index.html')
+      : path.resolve(applicationDirectory, '../../app/dist/index.html')
     return {
       appIconPath: path.resolve(applicationDirectory, '../assets/icon.png'),
       developmentRendererOrigin: Option.map(
         validatedDevelopmentRendererUrl,
         url => url.origin,
       ),
-      rendererPath: app.isPackaged
-        ? path.join(process.resourcesPath, 'app', 'index.html')
-        : path.resolve(applicationDirectory, '../../app/dist/index.html'),
+      rendererPath,
+      rendererUrl: (yield* path.toFileUrl(rendererPath)).href,
     }
   }).pipe(Effect.provide(NodePath.layer), Effect.orDie),
 )
 
 const isAllowedNavigation = (url: string): boolean =>
   Option.match(developmentRendererOrigin, {
-    onNone: () => url.startsWith('file:'),
+    onNone: () => url === rendererUrl || url.startsWith(`${rendererUrl}#`),
     onSome: origin => new URL(url).origin === origin,
   })
 
-const canWriteClipboard = (permission: string, url: string): boolean =>
-  permission === 'clipboard-sanitized-write' && isAllowedNavigation(url)
+const canUseRendererPermission = (
+  permission: string,
+  url: string,
+  isMainFrame: boolean,
+  mediaType?: string,
+): boolean =>
+  isMainFrame &&
+  isAllowedNavigation(url) &&
+  (permission === 'clipboard-sanitized-write' ||
+    (permission === 'media' && mediaType === 'audio'))
+
+const configureRendererPermissions = (window: BrowserWindow): void => {
+  session.defaultSession.setPermissionCheckHandler(
+    (webContents, permission, requestingOrigin, details) =>
+      webContents?.id === window.webContents.id &&
+      canUseRendererPermission(
+        permission,
+        details.requestingUrl ?? requestingOrigin,
+        details.isMainFrame,
+        details.mediaType,
+      ),
+  )
+  session.defaultSession.setPermissionRequestHandler(
+    (webContents, permission, callback, details) => {
+      const mediaType = 'mediaTypes' in details && details.mediaTypes?.length === 1
+        ? details.mediaTypes[0]
+        : undefined
+      callback(
+        webContents.id === window.webContents.id &&
+          canUseRendererPermission(
+            permission,
+            details.requestingUrl,
+            details.isMainFrame,
+            mediaType,
+          ),
+      )
+    },
+  )
+}
 
 const createWindow = (): BrowserWindow => {
   const window = new BrowserWindow({
@@ -68,6 +107,7 @@ const createWindow = (): BrowserWindow => {
   })
 
   window.once('ready-to-show', () => window.show())
+  configureRendererPermissions(window)
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   window.webContents.on('will-navigate', (event, url) => {
     if (!isAllowedNavigation(url)) event.preventDefault()
@@ -93,17 +133,6 @@ if (!hasSingleInstanceLock) {
 } else {
   void app.whenReady().then(() => {
     if (process.platform === 'darwin') app.dock?.setIcon(appIconPath)
-
-    session.defaultSession.setPermissionCheckHandler(
-      (webContents, permission) =>
-        webContents !== null &&
-        canWriteClipboard(permission, webContents.getURL()),
-    )
-    session.defaultSession.setPermissionRequestHandler(
-      (webContents, permission, callback) => {
-        callback(canWriteClipboard(permission, webContents.getURL()))
-      },
-    )
     createWindow()
   })
 }
