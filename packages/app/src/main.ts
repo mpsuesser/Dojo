@@ -10,6 +10,7 @@ import { toString as urlToString, Url } from 'foldkit/url'
 import dojoArtUrl from '../../../docs/generated-concept-art/01-the-dojo.png'
 import interrogationArtUrl from '../../../docs/generated-concept-art/03-hall-of-questions.png'
 import interviewArtUrl from '../../../docs/generated-concept-art/04-hall-of-voices.png'
+import archivifyArtUrl from '../../../docs/generated-concept-art/08-hall-of-memory.png'
 import {
   MusicPlaybackError,
   MusicPlaybackState,
@@ -17,6 +18,7 @@ import {
   MusicStartAttempt,
 } from './audio/player.ts'
 import { AudioSettings } from './audio/settings.ts'
+import backIconUrl from './icons/back.svg'
 import {
   AppRoute,
   archivifyRouter,
@@ -264,6 +266,68 @@ const splashView = (
     ],
   )
 
+const featureHeading = (
+  protocol: string,
+  hall: string,
+  title: string,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.header(
+    [h.Class('dojo-page-masthead')],
+    [
+      h.div(
+        [h.Class('dojo-page-title-lockup')],
+        [
+          h.a([
+            h.Href(navigationHref(protocol, homeRouter())),
+            h.Class('dojo-page-home-control'),
+            h.AriaLabel('Return to Dojo'),
+          ]),
+          h.span(
+            [h.Class('dojo-page-kicker')],
+            [
+              h.span(
+                [h.Class('dojo-page-home-mark')],
+                [
+                  h.span([h.Class('dojo-page-home-label')], ['Dojo']),
+                  h.img([
+                    h.Src(backIconUrl),
+                    h.Alt(''),
+                    h.Class('dojo-page-home-icon'),
+                  ]),
+                ],
+              ),
+              h.span([], [` / ${hall}`]),
+            ],
+          ),
+          h.h1([h.Class('dojo-page-title')], [title]),
+        ],
+      ),
+    ],
+  )
+
+const featureSplashView = (
+  protocol: string,
+  imageUrl: string,
+  description: string,
+  testId: string,
+  hall: string,
+  title: string,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.main(
+    [h.Class('splash-shell feature-shell')],
+    [
+      h.img([
+        h.Src(imageUrl),
+        h.Alt(description),
+        h.Class('splash-art'),
+        h.Attribute('data-testid', testId),
+      ]),
+      featureHeading(protocol, hall, title, h),
+    ],
+  )
+
 const menuLink = (
   label: string,
   href: string,
@@ -355,29 +419,46 @@ const routeDocument = M.type<AppRoute>().pipe(
     }),
     Archivify: () => ({
       title: 'Archivify | Dojo',
-      bodyView: (_model: Model, h: HtmlBuilder<Message>) =>
-        h.main([
-          h.Class('archivify-shell'),
-          h.Attribute('data-testid', 'archivify-page'),
-        ]),
+      bodyView: (model: Model, h: HtmlBuilder<Message>) =>
+        h.main(
+          [
+            h.Class('archivify-shell feature-shell'),
+            h.Attribute('data-testid', 'archivify-page'),
+          ],
+          [
+            h.img([
+              h.Src(archivifyArtUrl),
+              h.Alt('A lantern-lit monastic archive prepared to preserve new memories'),
+              h.Class('splash-art'),
+              h.Attribute('data-testid', 'archivify-splash'),
+            ]),
+            featureHeading(model.protocol, 'Hall of Memory', 'Archivify', h),
+          ],
+        ),
     }),
     Interrogation: () => ({
       title: 'Interrogation | Dojo',
-      bodyView: (_model: Model, h: HtmlBuilder<Message>) =>
-        splashView(
+      bodyView: (model: Model, h: HtmlBuilder<Message>) =>
+        featureSplashView(
+          model.protocol,
           interrogationArtUrl,
           'A candlelit hall devoted to questions and inquiry',
           'interrogation-splash',
+          'Hall of Questions',
+          'Interrogation',
           h,
         ),
     }),
     Interview: () => ({
       title: 'Interview | Dojo',
-      bodyView: (_model: Model, h: HtmlBuilder<Message>) =>
-        splashView(
+      bodyView: (model: Model, h: HtmlBuilder<Message>) =>
+        featureSplashView(
+          model.protocol,
           interviewArtUrl,
           'A ceremonial hall of voices prepared for an interview',
           'interview-splash',
+          'Hall of Voices',
+          'Interview',
           h,
         ),
     }),

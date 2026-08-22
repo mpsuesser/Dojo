@@ -509,36 +509,36 @@ export const view = Submodel.defineView<Model, Message>((model, h): Html => {
       ]),
       h.div([h.Class('sketch-atmosphere')]),
       h.header(
-        [h.Class('sketch-masthead')],
+        [h.Class('dojo-page-masthead')],
         [
           h.div(
-            [h.Class('sketch-title-lockup')],
+            [h.Class('dojo-page-title-lockup')],
             [
               h.button([
                 h.Type('button'),
-                h.Class('sketch-home-button'),
+                h.Class('dojo-page-home-control'),
                 h.AriaLabel('Return to Dojo'),
                 h.Disabled(isCopying),
                 h.OnClick(ClickedClose()),
               ]),
               h.span(
-                [h.Class('sketch-kicker')],
+                [h.Class('dojo-page-kicker')],
                 [
                   h.span(
-                    [h.Class('sketch-home-mark')],
+                    [h.Class('dojo-page-home-mark')],
                     [
-                      h.span([h.Class('sketch-home-label')], ['Dojo']),
+                      h.span([h.Class('dojo-page-home-label')], ['Dojo']),
                       h.img([
                         h.Src(backIconUrl),
                         h.Alt(''),
-                        h.Class('sketch-home-icon'),
+                        h.Class('dojo-page-home-icon'),
                       ]),
                     ],
                   ),
                   h.span([], [' / Hall of Form']),
                 ],
               ),
-              h.h1([h.Class('sketch-title')], ['Sketch']),
+              h.h1([h.Class('dojo-page-title')], ['Sketch']),
             ],
           ),
         ],

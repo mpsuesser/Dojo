@@ -39,11 +39,14 @@ describe('Dojo view', () => {
     )
   })
 
-  test('shows the empty Archivify page on the Archivify route', () => {
+  test('shows the Archivify heading on the Archivify route', () => {
     scene(
       { update, view },
       given(modelFor(ArchivifyRoute())),
       expect(selector('[data-testid="archivify-page"]')).toExist(),
+      expect(selector('[data-testid="archivify-splash"]')).toExist(),
+      expect(role('heading', { name: 'Archivify' })).toExist(),
+      expect(role('link', { name: 'Return to Dojo' })).toExist(),
       expect(role('navigation')).not.toExist(),
     )
   })
@@ -79,13 +82,15 @@ describe('Dojo view', () => {
   })
 
   test.each([
-    [InterrogationRoute(), 'interrogation-splash'],
-    [InterviewRoute(), 'interview-splash'],
-  ])('shows only the splash for the %s route', (route, testId) => {
+    [InterrogationRoute(), 'interrogation-splash', 'Interrogation'],
+    [InterviewRoute(), 'interview-splash', 'Interview'],
+  ])('shows the feature heading for the %s route', (route, testId, title) => {
     scene(
       { update, view },
       given(modelFor(route)),
       expect(selector(`[data-testid="${testId}"]`)).toExist(),
+      expect(role('heading', { name: title })).toExist(),
+      expect(role('link', { name: 'Return to Dojo' })).toExist(),
       expect(role('navigation')).not.toExist(),
     )
   })
