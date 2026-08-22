@@ -13,6 +13,21 @@ test('pages preserve the canonical scene composition', async ({ page }) => {
   expect(stage.y).toBeCloseTo(330, 1)
 })
 
+test('settings controls retain usable mobile hit areas', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.addInitScript(() => {
+    HTMLMediaElement.prototype.play = () => Promise.resolve()
+  })
+  await page.goto('/settings')
+
+  const masterVolume = page.getByRole('slider', { name: 'Master Volume' })
+  const bounds = await masterVolume.boundingBox()
+  expect(bounds).not.toBeNull()
+  if (!bounds) return
+  expect(bounds.width).toBeGreaterThanOrEqual(40)
+  expect(bounds.height).toBeGreaterThanOrEqual(40)
+})
+
 test('the main menu navigates between Foldkit routes', async ({ page }) => {
   await page.goto('/')
 
@@ -22,6 +37,11 @@ test('the main menu navigates between Foldkit routes', async ({ page }) => {
   await expect(page).toHaveURL(/\/sketch$/)
   await expect(page.getByTestId('sketch-workspace')).toBeVisible()
   await expect(page.getByTestId('sketch-editor')).toBeVisible()
+  const music = page.locator('audio[data-dojo-background-music]')
+  await expect(music).toHaveCount(1)
+  await expect
+    .poll(() => music.evaluate(element => Reflect.get(element, 'paused')))
+    .toBe(false)
 
   await page.goBack()
   await page.getByRole('link', { name: 'Archivify' }).click()
@@ -37,8 +57,139 @@ test('the main menu navigates between Foldkit routes', async ({ page }) => {
   await expect(page.getByTestId('interview-splash')).toBeVisible()
 
   await page.goto('/settings')
-  await expect(page.getByTestId('settings-splash')).toBeVisible()
+  await expect(page.getByTestId('settings-page')).toBeVisible()
+  await expect(page.getByRole('slider', { name: 'Master Volume' })).toBeVisible()
   await expect(page.locator('link[rel="manifest"]')).toHaveCount(1)
+})
+
+test('audio settings apply immediately and persist locally', async ({ page }) => {
+  await page.addInitScript(() => {
+    HTMLMediaElement.prototype.play = () => Promise.resolve()
+  })
+  await page.goto('/settings')
+
+  const music = page.locator('audio[data-dojo-background-music]')
+  await expect(music).toHaveCount(1)
+  await expect
+    .poll(() => music.evaluate(element => Reflect.get(element, 'volume')))
+    .toBeCloseTo(0.315, 3)
+
+  const masterVolume = page.getByRole('slider', { name: 'Master Volume' })
+  const musicVolume = page.getByRole('slider', { name: 'Music Volume' })
+  const voiceVolume = page.getByRole('slider', { name: 'Voice Volume' })
+  const soundEffectsVolume = page.getByRole('slider', {
+    name: 'Sound Effects Volume',
+  })
+
+  await masterVolume.press('End')
+  await musicVolume.press('End')
+  await voiceVolume.press('Home')
+  await soundEffectsVolume.press('End')
+
+  await expect(masterVolume).toHaveAttribute('aria-valuenow', '100')
+  await expect(musicVolume).toHaveAttribute('aria-valuenow', '100')
+  await expect(voiceVolume).toHaveAttribute('aria-valuenow', '0')
+  await expect(soundEffectsVolume).toHaveAttribute('aria-valuenow', '100')
+  await expect
+    .poll(() => music.evaluate(element => Reflect.get(element, 'volume')))
+    .toBe(1)
+  await page.waitForFunction(() => {
+    const stored = localStorage.getItem('dojo.audio-settings.v1')
+    return (
+      stored?.includes('"masterVolume":100') === true &&
+      stored.includes('"musicVolume":100') &&
+      stored.includes('"voiceVolume":0') &&
+      stored.includes('"soundEffectsVolume":100')
+    )
+  })
+
+  await page.reload()
+  await expect(
+    page.getByRole('slider', { name: 'Master Volume' }),
+  ).toHaveAttribute('aria-valuenow', '100')
+  await expect(
+    page.getByRole('slider', { name: 'Music Volume' }),
+  ).toHaveAttribute('aria-valuenow', '100')
+  await expect(
+    page.getByRole('slider', { name: 'Voice Volume' }),
+  ).toHaveAttribute('aria-valuenow', '0')
+  await expect(
+    page.getByRole('slider', { name: 'Sound Effects Volume' }),
+  ).toHaveAttribute('aria-valuenow', '100')
+})
+
+test('audio settings fall back when local storage is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get: () => {
+        throw new DOMException('Storage is unavailable', 'SecurityError')
+      },
+    })
+    HTMLMediaElement.prototype.play = () => Promise.resolve()
+  })
+  await page.goto('/settings')
+
+  const masterVolume = page.getByRole('slider', { name: 'Master Volume' })
+  await expect(masterVolume).toHaveAttribute('aria-valuenow', '70')
+  await masterVolume.press('End')
+  await expect(masterVolume).toHaveAttribute('aria-valuenow', '100')
+})
+
+test('playback ignores stale attempts and retries after interaction', async ({ page }) => {
+  await page.addInitScript(() => {
+    const attempts: Array<
+      Readonly<{ resolve: () => void; reject: () => void }>
+    > = []
+    Reflect.set(window, 'dojoMusicAttempts', attempts)
+    HTMLMediaElement.prototype.play = () =>
+      new Promise<void>((resolve, reject) => {
+        attempts.push({
+          resolve,
+          reject: () => reject(new DOMException('Playback blocked', 'NotAllowedError')),
+        })
+      })
+  })
+  await page.goto('/settings')
+
+  const status = page.getByTestId('settings-playback-status')
+  const attemptCount = () =>
+    page.evaluate(() => {
+      const attempts = Reflect.get(window, 'dojoMusicAttempts')
+      return Array.isArray(attempts) ? attempts.length : 0
+    })
+  const settleAttempt = (
+    index: number,
+    outcome: 'resolve' | 'reject',
+  ) =>
+    page.evaluate(
+      ({ attemptIndex, attemptOutcome }) => {
+        const attempts = Reflect.get(window, 'dojoMusicAttempts')
+        if (!Array.isArray(attempts)) return
+        const attempt = attempts[attemptIndex]
+        if (typeof attempt !== 'object' || attempt === null) return
+        const settle = Reflect.get(attempt, attemptOutcome)
+        if (typeof settle === 'function') Reflect.apply(settle, attempt, [])
+      },
+      { attemptIndex: index, attemptOutcome: outcome },
+    )
+
+  await expect(status).toContainText('Starting music')
+  await expect.poll(attemptCount).toBe(1)
+
+  await page.keyboard.press('x')
+  await expect.poll(attemptCount).toBe(2)
+  await settleAttempt(0, 'resolve')
+  await expect(status).toContainText('Starting music')
+
+  await settleAttempt(1, 'reject')
+  await expect(status).toContainText('Ready when you are')
+
+  await page.keyboard.press('x')
+  await expect.poll(attemptCount).toBe(3)
+  await settleAttempt(2, 'resolve')
+  await expect(status).toContainText('Now playing')
+  await expect.poll(attemptCount).toBe(3)
 })
 
 test('the web app is installable as a PWA', async ({ browserName, page }) => {

@@ -1,8 +1,10 @@
 import { describe, test } from '@effect/vitest'
 import { expect, given, role, scene, selector } from 'foldkit/scene'
 
-import { update, view } from '../src/main.ts'
+import { defaultAudioSettings } from '../src/audio/settings.ts'
+import { type Model, update, view } from '../src/main.ts'
 import {
+  type AppRoute,
   ArchivifyRoute,
   HomeRoute,
   InterrogationRoute,
@@ -10,13 +12,22 @@ import {
   SettingsRoute,
   SketchRoute,
 } from '../src/route.ts'
+import * as Settings from '../src/settings/main.ts'
 import * as Sketch from '../src/sketch/main.ts'
+
+const modelFor = (route: AppRoute): Model => ({
+  route,
+  protocol: 'https:',
+  musicPlaybackState: 'WaitingForInteraction',
+  settings: Settings.init(defaultAudioSettings),
+  sketch: Sketch.init(),
+})
 
 describe('Dojo view', () => {
   test('shows the Dojo menu on the home route', () => {
     scene(
       { update, view },
-      given({ route: HomeRoute(), protocol: 'https:', sketch: Sketch.init() }),
+      given(modelFor(HomeRoute())),
       expect(selector('[data-testid="scene-stage"]')).toExist(),
       expect(selector('[data-testid="dojo-art"]')).toExist(),
       expect(role('heading', { name: 'Dojo' })).toExist(),
@@ -31,7 +42,7 @@ describe('Dojo view', () => {
   test('shows the empty Archivify page on the Archivify route', () => {
     scene(
       { update, view },
-      given({ route: ArchivifyRoute(), protocol: 'https:', sketch: Sketch.init() }),
+      given(modelFor(ArchivifyRoute())),
       expect(selector('[data-testid="archivify-page"]')).toExist(),
       expect(role('navigation')).not.toExist(),
     )
@@ -40,7 +51,7 @@ describe('Dojo view', () => {
   test('shows the sketch workspace on the sketch route', () => {
     scene(
       { update, view },
-      given({ route: SketchRoute(), protocol: 'https:', sketch: Sketch.init() }),
+      given(modelFor(SketchRoute())),
       expect(selector('[data-testid="sketch-workspace"]')).toExist(),
       expect(selector('[data-testid="sketch-art"]')).toExist(),
       expect(selector('[data-testid="sketch-editor"]')).toExist(),
@@ -51,14 +62,29 @@ describe('Dojo view', () => {
     )
   })
 
+  test('shows the audio controls on the settings route', () => {
+    scene(
+      { update, view },
+      given(modelFor(SettingsRoute())),
+      expect(selector('[data-testid="settings-page"]')).toExist(),
+      expect(selector('[data-testid="settings-art"]')).toExist(),
+      expect(role('heading', { name: 'Sound' })).toExist(),
+      expect(role('slider', { name: 'Master Volume' })).toExist(),
+      expect(role('slider', { name: 'Music Volume' })).toExist(),
+      expect(role('slider', { name: 'Voice Volume' })).toExist(),
+      expect(role('slider', { name: 'Sound Effects Volume' })).toExist(),
+      expect(role('button', { name: 'Return to Dojo' })).toExist(),
+      expect(role('navigation')).not.toExist(),
+    )
+  })
+
   test.each([
     [InterrogationRoute(), 'interrogation-splash'],
     [InterviewRoute(), 'interview-splash'],
-    [SettingsRoute(), 'settings-splash'],
   ])('shows only the splash for the %s route', (route, testId) => {
     scene(
       { update, view },
-      given({ route, protocol: 'https:', sketch: Sketch.init() }),
+      given(modelFor(route)),
       expect(selector(`[data-testid="${testId}"]`)).toExist(),
       expect(role('navigation')).not.toExist(),
     )
