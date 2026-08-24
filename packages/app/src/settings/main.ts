@@ -7,6 +7,7 @@ import { m } from 'foldkit/message'
 import { evo } from 'foldkit/struct'
 import * as Submodel from 'foldkit/submodel'
 
+import { OPENAI_API_KEYS_URL } from '@dojo/shared'
 import { Slider } from '@foldkit/ui'
 
 import settingsArtUrl from '../../../../docs/generated-concept-art/06-inner-courtyard.png'
@@ -676,9 +677,21 @@ export const view = Submodel.defineView<Model, Message, ViewInputs>((
                   ),
                 ],
               ),
-              h.p([h.Class('settings-api-note')], [
-                'Stored only in this local Dojo profile.',
-              ]),
+              h.p(
+                [h.Class('settings-api-note')],
+                [
+                  'Stored only in this local Dojo profile.',
+                  h.a(
+                    [
+                      h.Href(OPENAI_API_KEYS_URL),
+                      h.Target('_blank'),
+                      h.Rel('noopener noreferrer'),
+                      h.Class('settings-api-key-link'),
+                    ],
+                    ['Get an API key'],
+                  ),
+                ],
+              ),
             ],
           ),
           h.footer(

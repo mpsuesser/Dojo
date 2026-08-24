@@ -1,3 +1,4 @@
+import { OPENAI_API_KEYS_URL } from '@dojo/shared'
 import { describe, test } from '@effect/vitest'
 import { expect, given, role, scene, selector } from 'foldkit/scene'
 
@@ -80,6 +81,18 @@ describe('Dojo view', () => {
       expect(role('slider', { name: 'Sound Effects Volume' })).toExist(),
       expect(role('textbox', { name: 'OpenAI API Key' })).toExist(),
       expect(role('button', { name: 'Show OpenAI API key' })).toExist(),
+      expect(role('link', { name: 'Get an API key' })).toHaveAttr(
+        'href',
+        OPENAI_API_KEYS_URL,
+      ),
+      expect(role('link', { name: 'Get an API key' })).toHaveAttr(
+        'target',
+        '_blank',
+      ),
+      expect(role('link', { name: 'Get an API key' })).toHaveAttr(
+        'rel',
+        'noopener noreferrer',
+      ),
       expect(role('button', { name: 'Return to Dojo' })).toExist(),
       expect(role('navigation')).not.toExist(),
     )

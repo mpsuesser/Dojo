@@ -1,6 +1,9 @@
+import { OPENAI_API_KEYS_URL } from '@dojo/shared'
 import { NodePath } from '@effect/platform-node'
-import { Config, Effect, Option, Path } from 'effect'
-import { app, BrowserWindow, session } from 'electron'
+import { Config, Effect, Layer, ManagedRuntime, Option, Path } from 'effect'
+import { app, BrowserWindow, session, shell } from 'electron'
+
+const electronRuntime = ManagedRuntime.make(Layer.empty)
 
 const developmentRendererUrl = Effect.runSync(
   Config.option(Config.url('DOJO_RENDERER_URL')),
@@ -89,6 +92,16 @@ const configureRendererPermissions = (window: BrowserWindow): void => {
   )
 }
 
+const openAllowedExternalUrl = (url: string): void => {
+  if (url !== OPENAI_API_KEYS_URL) return
+
+  electronRuntime.runFork(
+    Effect.tryPromise(() => shell.openExternal(url)).pipe(
+      Effect.catch(error => Effect.logError('Failed to open an external URL.', error)),
+    ),
+  )
+}
+
 const createWindow = (): BrowserWindow => {
   const window = new BrowserWindow({
     title: 'Dojo',
@@ -108,7 +121,10 @@ const createWindow = (): BrowserWindow => {
 
   window.once('ready-to-show', () => window.show())
   configureRendererPermissions(window)
-  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    openAllowedExternalUrl(url)
+    return { action: 'deny' }
+  })
   window.webContents.on('will-navigate', (event, url) => {
     if (!isAllowedNavigation(url)) event.preventDefault()
   })
@@ -127,6 +143,9 @@ const createWindow = (): BrowserWindow => {
 
 app.setName('Dojo')
 app.setAboutPanelOptions({ applicationName: 'Dojo' })
+app.once('will-quit', () => {
+  void electronRuntime.dispose()
+})
 const hasSingleInstanceLock = app.requestSingleInstanceLock()
 if (!hasSingleInstanceLock) {
   app.quit()

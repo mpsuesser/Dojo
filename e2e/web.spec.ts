@@ -193,6 +193,14 @@ test('audio settings apply immediately and persist locally', async ({ page }) =>
 test('OpenAI credentials stay masked, toggle visibility, and persist', async ({ page }) => {
   await page.goto('/settings')
 
+  const apiKeyLink = page.getByRole('link', { name: 'Get an API key' })
+  await expect(apiKeyLink).toHaveAttribute(
+    'href',
+    'https://platform.openai.com/api-keys',
+  )
+  await expect(apiKeyLink).toHaveAttribute('target', '_blank')
+  await expect(apiKeyLink).toHaveAttribute('rel', 'noopener noreferrer')
+
   const apiKey = page.locator('#openai-api-key')
   await expect(apiKey).toHaveAttribute('type', 'password')
   await apiKey.fill('sk-dojo-test-key')

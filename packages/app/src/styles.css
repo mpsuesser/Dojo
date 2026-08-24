@@ -622,9 +622,30 @@ body {
 }
 
 .settings-api-note {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
   margin: 0;
   letter-spacing: 0.08em;
   text-transform: none;
+}
+
+.settings-api-key-link {
+  color: rgb(183 201 230 / 62%);
+  text-decoration-color: rgb(210 163 99 / 42%);
+  text-underline-offset: 0.18em;
+  white-space: nowrap;
+}
+
+.settings-api-key-link:hover,
+.settings-api-key-link:focus-visible {
+  color: #e6bf86;
+  text-decoration-color: currentcolor;
+}
+
+.settings-api-key-link:focus-visible {
+  outline: 1px solid rgb(230 191 134 / 68%);
+  outline-offset: 0.18rem;
 }
 
 .settings-now-playing {
