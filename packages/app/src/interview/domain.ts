@@ -78,6 +78,7 @@ export const ActiveInterview = ts('ActiveInterview', {
   sessionId: Schema.String,
   activationId: Schema.String,
   connectionState: RealtimeConnectionState,
+  initialTranscript: Schema.Array(TranscriptTurn),
 })
 
 export const InterviewScreen = Schema.Union([

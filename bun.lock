@@ -114,7 +114,7 @@
     "@effect/platform-bun": "4.0.0-rc.108",
     "@effect/platform-node": "4.0.0-rc.108",
     "@foldkit/ui": "0.145.0",
-    "@openai/agents": "0.11.8",
+    "@openai/agents": "0.13.2",
     "@tldraw/assets": "5.3.1",
     "alchemy": "2.0.0-beta.72",
     "effect": "4.0.0-rc.108",
@@ -704,13 +704,13 @@
 
     "@octokit/webhooks-methods": ["@octokit/webhooks-methods@6.0.0", "", {}, "sha512-MFlzzoDJVw/GcbfzVC1RLR36QqkTLUf79vLVO3D+xn7r0QgxnFoLZgtrzxiQErAjFUOdH6fas2KeQJ1yr/qaXQ=="],
 
-    "@openai/agents": ["@openai/agents@0.11.8", "", { "dependencies": { "@openai/agents-core": "0.11.8", "@openai/agents-openai": "0.11.8", "@openai/agents-realtime": "0.11.8", "debug": "^4.4.0", "openai": "^6.35.0" }, "peerDependencies": { "zod": "^4.0.0" } }, "sha512-D4XHF2g+Ub/L9fRJT/xpuiCqHyxiKzZbi0BqQxnso42t+J049O/OSvVzFBcRskF4uPFAvs0TOOB7KBbanCwaYQ=="],
+    "@openai/agents": ["@openai/agents@0.13.2", "", { "dependencies": { "@openai/agents-core": "0.13.2", "@openai/agents-openai": "0.13.2", "@openai/agents-realtime": "0.13.2", "debug": "^4.4.0", "openai": "^6.46.0" }, "peerDependencies": { "zod": "^4.0.0" } }, "sha512-Jth+sOF9Fklg9aiJFOfvcnPJtNgq9EvBHm206AMJXHa2yadfZ5BN1oYUxhlFGt38YigK4gFvBdmcR+qX1gNJbQ=="],
 
-    "@openai/agents-core": ["@openai/agents-core@0.11.8", "", { "dependencies": { "debug": "^4.4.0", "openai": "^6.35.0" }, "optionalDependencies": { "@modelcontextprotocol/sdk": "^1.26.0" }, "peerDependencies": { "zod": "^4.0.0" }, "optionalPeers": ["zod"] }, "sha512-TrE34RXXPoWYv2PjXf5hq3Eq+uvRJMNiY+Q5WBgEPjAg60yt2hya8cS2I8qkO6i25MjNJl37a25X0vL/gs5Wdg=="],
+    "@openai/agents-core": ["@openai/agents-core@0.13.2", "", { "dependencies": { "debug": "^4.4.0", "openai": "^6.46.0" }, "optionalDependencies": { "@modelcontextprotocol/sdk": "^1.26.0" }, "peerDependencies": { "zod": "^4.0.0" }, "optionalPeers": ["zod"] }, "sha512-j/CDl6kL2CITe6HtKr0hQOURAjUa4bmKxgQy8AnSuk15s1mOxs3YRJ0EZxVZVnnii0PphyVNYTC/+/boIl3oJA=="],
 
-    "@openai/agents-openai": ["@openai/agents-openai@0.11.8", "", { "dependencies": { "@openai/agents-core": "0.11.8", "debug": "^4.4.0", "openai": "^6.35.0" }, "peerDependencies": { "zod": "^4.0.0" } }, "sha512-XjHCnJPGapgZBlh8y5oxU7zV0hrAQTF5im6HpUwaPcH5CeRFLtc06VXLso0vJ5G3g9e/J5gIh3S1iAxiJqEAVQ=="],
+    "@openai/agents-openai": ["@openai/agents-openai@0.13.2", "", { "dependencies": { "@openai/agents-core": "0.13.2", "debug": "^4.4.0", "openai": "^6.46.0" }, "peerDependencies": { "zod": "^4.0.0" } }, "sha512-ECMqRZyFrjQ+uGgrn5a4EZS2IHmnefy/v9GVLfwvDy5KrCCHRcy40QjczetSDW7ZIR1Qhv19WaKtei5RAUH9xQ=="],
 
-    "@openai/agents-realtime": ["@openai/agents-realtime@0.11.8", "", { "dependencies": { "@openai/agents-core": "0.11.8", "@types/ws": "^8.18.1", "debug": "^4.4.0", "ws": "^8.18.1" }, "peerDependencies": { "zod": "^4.0.0" } }, "sha512-i1qEGUE8GTW0neWgAc1aj/3wZFtstz8bVG2BvVbU/BzQbyhZV8j3CvndkMJGFfgeobvVmn2qGTV5Ry6ibfuxeQ=="],
+    "@openai/agents-realtime": ["@openai/agents-realtime@0.13.2", "", { "dependencies": { "@openai/agents-core": "0.13.2", "@types/ws": "^8.18.1", "debug": "^4.4.0", "ws": "^8.21.0" }, "peerDependencies": { "zod": "^4.0.0" } }, "sha512-HxV/K3pZ0+NKYpL2Cjb7EykQ2mQUDA3g6MtN9MMiPZHCmR749gHX2V7g5T0lx3aAheAUDQ4/wSDGNJgYxxWF7w=="],
 
     "@oxc-project/types": ["@oxc-project/types@0.139.0", "", {}, "sha512-r9gHphtCs+1M7J0pw6Sn/hh/Wpa/iQrOOkrNAlVLF/gHq+/CJmHIWKKUUhdWjcD6CIa8idarspCsASiXCXvFUw=="],
 

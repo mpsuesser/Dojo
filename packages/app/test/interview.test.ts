@@ -14,9 +14,11 @@ import {
   ClickedResumeInterview,
   CompletedActivateInterview,
   CompletedCreateInterview,
+  FailedAcquireRealtimeInterview,
   init,
   InterviewConfiguration,
   InterviewSession,
+  managedResources,
   ReceivedRealtimeInterviewEvent,
   update,
 } from '../src/interview/main.ts'
@@ -72,6 +74,7 @@ describe('Interview state machine', () => {
         sessionId: 'session-1',
         activationId: 'activation-1',
         connectionState: 'Connecting',
+        initialTranscript: [],
       }),
     )
     expect(active.musicDuckingState).toBe('Muted')
@@ -94,6 +97,11 @@ describe('Interview state machine', () => {
       }),
     )
     expect(transcribed.sessions[0]?.transcript).toEqual(transcript)
+    expect(
+      managedResources.realtimeInterview.modelToMaybeRequirements(transcribed),
+    ).toEqual(
+      managedResources.realtimeInterview.modelToMaybeRequirements(active),
+    )
 
     const [paused, commands] = update(transcribed, ClickedPauseInterview())
     expect(paused.screen).toEqual(ReviewInterview({ sessionId: 'session-1' }))
@@ -168,6 +176,30 @@ describe('Interview state machine', () => {
     expect(Option.getOrElse(paused.notice, () => '')).toBe(
       'The voice channel disconnected. Your session was paused.',
     )
+    expect(commands.map(command => command.name)).toEqual([
+      'GenerateInterviewMetadata',
+    ])
+  })
+
+  test('preserves the provider error when Realtime acquisition fails', () => {
+    const [pending] = update(init(apiKey), ClickedBeginInterview())
+    const [active] = update(
+      pending,
+      CompletedCreateInterview({
+        requestId: pending.activationRequestId,
+        session,
+        activationId: 'activation-1',
+      }),
+    )
+    const providerError =
+      'Realtime call request failed with status 429: You exceeded your current quota.'
+    const [paused, commands] = update(
+      active,
+      FailedAcquireRealtimeInterview({ error: providerError }),
+    )
+
+    expect(paused.screen).toEqual(ReviewInterview({ sessionId: session.id }))
+    expect(Option.getOrElse(paused.notice, () => '')).toBe(providerError)
     expect(commands.map(command => command.name)).toEqual([
       'GenerateInterviewMetadata',
     ])

@@ -1,5 +1,5 @@
 import { BrowserCrypto } from '@effect/platform-browser'
-import { Clock, Crypto, Duration, Effect, Match as M, Option, Stream } from 'effect'
+import { Clock, Crypto, Duration, Effect, Match as M, Option, pipe, Stream } from 'effect'
 import * as Arr from 'effect/Array'
 import * as Bool from 'effect/Boolean'
 import * as P from 'effect/Predicate'
@@ -594,6 +594,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
                   sessionId: session.id,
                   activationId,
                   connectionState: 'Connecting',
+                  initialTranscript: session.transcript,
                 }),
               musicDuckingState: () => 'Muted',
               notice: () => Option.none(),
@@ -640,6 +641,11 @@ export const update = (model: Model, message: Message): UpdateReturn =>
                   sessionId,
                   activationId,
                   connectionState: 'Connecting',
+                  initialTranscript: pipe(
+                    findSession(model.sessions, sessionId),
+                    Option.map(session => session.transcript),
+                    Option.getOrElse(() => []),
+                  ),
                 }),
               musicDuckingState: () => 'Muted',
               notice: () => Option.none(),
@@ -732,7 +738,7 @@ const modelToRealtimeConfig = (
           activationId: active.activationId,
           apiKey: model.openAiApiKey,
           interviewConfig: session.config,
-          transcript: session.transcript,
+          transcript: active.initialTranscript,
         })),
   )
 

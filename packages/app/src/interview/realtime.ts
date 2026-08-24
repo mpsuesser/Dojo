@@ -1,3 +1,4 @@
+import { BrowserHttpClient } from '@effect/platform-browser'
 import {
   OpenAIRealtimeWebRTC,
   RealtimeAgent,
@@ -11,9 +12,9 @@ import * as Arr from 'effect/Array'
 import * as Option from 'effect/Option'
 import * as P from 'effect/Predicate'
 import * as Queue from 'effect/Queue'
-import * as Redacted from 'effect/Redacted'
 import * as Schema from 'effect/Schema'
 import * as Str from 'effect/String'
+import { HttpClient, HttpClientRequest, HttpClientResponse } from 'effect/unstable/http'
 import { ManagedResource } from 'foldkit'
 
 import { OpenAiApiKey } from '../openai/api-key.ts'
@@ -21,8 +22,64 @@ import { InterviewConfiguration, TranscriptTurn } from './domain.ts'
 import { makeInterviewPrompt } from './prompt.ts'
 
 const REALTIME_MODEL = 'gpt-realtime-2'
+const REALTIME_CLIENT_SECRETS_URL = 'https://api.openai.com/v1/realtime/client_secrets'
 const TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe'
 const INTERVIEWER_VOICE = 'marin'
+
+class OpenAiRealtimeSessionCreatePayload extends Schema.Class<OpenAiRealtimeSessionCreatePayload>(
+  'OpenAiRealtimeSessionCreatePayload',
+)({
+  type: Schema.Literal('realtime'),
+  model: Schema.String,
+}) {}
+
+class OpenAiRealtimeClientSecretCreateRequest
+  extends Schema.Class<OpenAiRealtimeClientSecretCreateRequest>(
+    'OpenAiRealtimeClientSecretCreateRequest',
+  )({
+    session: OpenAiRealtimeSessionCreatePayload,
+  })
+{}
+
+class OpenAiRealtimeClientSecretCreateResponse
+  extends Schema.Class<OpenAiRealtimeClientSecretCreateResponse>(
+    'OpenAiRealtimeClientSecretCreateResponse',
+  )({
+    value: Schema.String.check(
+      Schema.isStartsWith('ek_', {
+        identifier: 'OpenAiRealtimeClientSecretPrefixCheck',
+        title: 'OpenAI Realtime Client Secret Prefix',
+        description: 'An ephemeral OpenAI Realtime client secret beginning with `ek_`.',
+        message: 'OpenAI returned an invalid Realtime client secret.',
+      }),
+    ),
+  })
+{}
+
+class OpenAiErrorDetail extends Schema.Class<OpenAiErrorDetail>(
+  'OpenAiErrorDetail',
+)({
+  message: Schema.String,
+}) {}
+
+class OpenAiErrorResponse extends Schema.Class<OpenAiErrorResponse>(
+  'OpenAiErrorResponse',
+)({
+  error: OpenAiErrorDetail,
+}) {}
+
+const OpenAiErrorResponseJson = Schema.fromJsonString(OpenAiErrorResponse)
+
+class OpenAiRealtimeClientSecretRejected
+  extends Schema.TaggedError<OpenAiRealtimeClientSecretRejected>()(
+    'OpenAiRealtimeClientSecretRejected',
+    {
+      status: Schema.Int,
+      message: Schema.String,
+    },
+    { description: 'OpenAI rejected a Realtime client-secret request.' },
+  )
+{}
 
 /** Requirements used to acquire one browser WebRTC interview session. */
 export class RealtimeInterviewConfig extends Schema.Class<RealtimeInterviewConfig>(
@@ -234,9 +291,71 @@ const operationError =
       message: errorMessage(error),
     })
 
+const rejectedClientSecretMessage = (status: number, body: string): string => {
+  const detail = pipe(
+    Schema.decodeOption(OpenAiErrorResponseJson)(body),
+    Option.map(response => response.error.message),
+    Option.filter(Str.isNonEmpty),
+    Option.orElse(() => pipe(body, Str.trim, Option.liftPredicate(Str.isNonEmpty))),
+  )
+  return `OpenAI Realtime client secret request failed with status ${status}${
+    Option.match(detail, {
+      onNone: () => '.',
+      onSome: message => `: ${message}`,
+    })
+  }`
+}
+
+/** Mint a model-bound ephemeral key for the GA Realtime WebRTC transport. */
+export const mintRealtimeClientSecret = Effect.fn(
+  'Interview.mintRealtimeClientSecret',
+)(function* (activationId: string, apiKey: OpenAiApiKey) {
+  const client = yield* HttpClient.HttpClient
+  return yield* HttpClientRequest.post(REALTIME_CLIENT_SECRETS_URL).pipe(
+    HttpClientRequest.schemaBodyJson(OpenAiRealtimeClientSecretCreateRequest)(
+      new OpenAiRealtimeClientSecretCreateRequest({
+        session: new OpenAiRealtimeSessionCreatePayload({
+          type: 'realtime',
+          model: REALTIME_MODEL,
+        }),
+      }),
+    ),
+    Effect.map(request =>
+      request.pipe(
+        HttpClientRequest.bearerToken(apiKey),
+        HttpClientRequest.acceptJson,
+      )
+    ),
+    Effect.flatMap(client.execute),
+    Effect.flatMap(
+      HttpClientResponse.matchStatus({
+        '2xx': HttpClientResponse.schemaBodyJson(
+          OpenAiRealtimeClientSecretCreateResponse,
+        ),
+        orElse: response =>
+          response.text.pipe(
+            Effect.orElseSucceed(() => ''),
+            Effect.flatMap(body =>
+              new OpenAiRealtimeClientSecretRejected({
+                status: response.status,
+                message: rejectedClientSecretMessage(response.status, body),
+              })
+            ),
+          ),
+      }),
+    ),
+    Effect.map(response => response.value),
+    Effect.mapError(operationError(activationId, 'mintClientSecret')),
+  )
+})
+
 /** Acquire and connect a browser WebRTC session with scoped microphone ownership. */
 export const createRealtimeInterview = Effect.fn('Interview.createRealtime')(
   function* (config: RealtimeInterviewConfig) {
+    const clientSecret = yield* mintRealtimeClientSecret(
+      config.activationId,
+      config.apiKey,
+    ).pipe(Effect.provide(BrowserHttpClient.layerFetch))
     const isResuming = Arr.match(config.transcript, {
       onEmpty: () => false,
       onNonEmpty: () => true,
@@ -251,8 +370,7 @@ export const createRealtimeInterview = Effect.fn('Interview.createRealtime')(
       catch: operationError(config.activationId, 'createAgent'),
     })
     const transport = yield* Effect.try({
-      // Dojo has no credential-minting backend; the local key is unwrapped only at connect.
-      try: () => new OpenAIRealtimeWebRTC({ useInsecureApiKey: true }),
+      try: () => new OpenAIRealtimeWebRTC(),
       catch: operationError(config.activationId, 'createTransport'),
     })
     const session = yield* Effect.try({
@@ -288,7 +406,7 @@ export const createRealtimeInterview = Effect.fn('Interview.createRealtime')(
         // the SDK session because its connect API cannot accept the signal.
         try: _signal =>
           session.connect({
-            apiKey: Redacted.value(config.apiKey),
+            apiKey: clientSecret,
             model: REALTIME_MODEL,
           }),
         catch: operationError(config.activationId, 'connect'),
