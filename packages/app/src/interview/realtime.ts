@@ -24,7 +24,7 @@ import { makeInterviewPrompt } from './prompt.ts'
 const REALTIME_MODEL = 'gpt-realtime-2'
 const REALTIME_CLIENT_SECRETS_URL = 'https://api.openai.com/v1/realtime/client_secrets'
 const TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe'
-const INTERVIEWER_VOICE = 'marin'
+const INTERVIEWER_VOICE = 'ash'
 
 class OpenAiRealtimeSessionCreatePayload extends Schema.Class<OpenAiRealtimeSessionCreatePayload>(
   'OpenAiRealtimeSessionCreatePayload',

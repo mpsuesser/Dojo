@@ -1493,7 +1493,7 @@ body {
 
 .interview-energy-strand {
   --flow-end: -100;
-  --flow-duration: 4s;
+  --flow-duration: 16s;
   --flow-delay: 0s;
   --rest-offset: 0;
   --strand-color: #e4a052;
@@ -1539,14 +1539,14 @@ body {
 }
 
 .interview-energy-strand-amber-outer {
-  --flow-duration: 4.4s;
-  --flow-delay: -1.1s;
+  --flow-duration: 17.6s;
+  --flow-delay: -4.4s;
   --rest-offset: -18;
 }
 
 .interview-energy-strand-amber-inner {
-  --flow-duration: 3.2s;
-  --flow-delay: -2.35s;
+  --flow-duration: 12.8s;
+  --flow-delay: -9.4s;
   --rest-offset: -57;
   --strand-color: #f0b365;
   --tip-color: #fff4cf;
@@ -1554,8 +1554,8 @@ body {
 
 .interview-energy-strand-cyan-outer {
   --flow-end: 100;
-  --flow-duration: 4.8s;
-  --flow-delay: -3.05s;
+  --flow-duration: 19.2s;
+  --flow-delay: -12.2s;
   --rest-offset: 31;
   --strand-color: #50d2ce;
   --tip-color: #d7ffff;
@@ -1563,16 +1563,16 @@ body {
 
 .interview-energy-strand-cyan-inner {
   --flow-end: 100;
-  --flow-duration: 3.55s;
-  --flow-delay: -0.8s;
+  --flow-duration: 14.2s;
+  --flow-delay: -3.2s;
   --rest-offset: 72;
   --strand-color: #70e2dc;
   --tip-color: #e5ffff;
 }
 
 .interview-energy-strand-crossing {
-  --flow-duration: 2.85s;
-  --flow-delay: -1.4s;
+  --flow-duration: 11.4s;
+  --flow-delay: -5.6s;
   --rest-offset: -42;
   --strand-color: #dfc990;
   --tip-color: #fff8df;
