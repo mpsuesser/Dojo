@@ -246,6 +246,35 @@ test('Interview configuration explains missing Realtime access and keeps drafts'
 
   const begin = page.getByRole('button', { name: 'Begin interview' })
   await expect(begin).toBeDisabled()
+
+  const stageBounds = await page.getByTestId('scene-stage').boundingBox()
+  const objectivesBounds = await objectives.boundingBox()
+  const contextBounds = await context.boundingBox()
+  const beginBounds = await begin.boundingBox()
+  expect(stageBounds).not.toBeNull()
+  expect(objectivesBounds).not.toBeNull()
+  expect(contextBounds).not.toBeNull()
+  expect(beginBounds).not.toBeNull()
+  if (
+    !stageBounds ||
+    !objectivesBounds ||
+    !contextBounds ||
+    !beginBounds
+  ) return
+  const stageCenter = stageBounds.x + stageBounds.width * 0.53
+  expect(objectivesBounds.x + objectivesBounds.width / 2).toBeCloseTo(
+    stageCenter,
+    0,
+  )
+  expect(contextBounds.x + contextBounds.width / 2).toBeCloseTo(stageCenter, 0)
+  expect(objectivesBounds.width).toBeLessThan(stageBounds.width * 0.18)
+  expect(objectivesBounds.height).toBeGreaterThan(objectivesBounds.width * 0.7)
+  expect(beginBounds.width).toBeCloseTo(objectivesBounds.width, 0)
+  expect(objectivesBounds.y + objectivesBounds.height).toBeLessThan(
+    contextBounds.y,
+  )
+  expect(contextBounds.y + contextBounds.height).toBeLessThan(beginBounds.y)
+
   await page.locator('.interview-begin-wrap').hover()
   const settingsLink = page.getByRole('link', { name: 'Settings' })
   await expect(settingsLink).toBeVisible()
@@ -284,6 +313,76 @@ test('audio settings fall back when local storage is unavailable', async ({ page
   await expect(masterVolume).toHaveAttribute('aria-valuenow', '70')
   await masterVolume.press('End')
   await expect(masterVolume).toHaveAttribute('aria-valuenow', '100')
+})
+
+test('storage read failures do not overwrite preserved data', async ({ page }) => {
+  await page.addInitScript(() => {
+    const storage = window.localStorage
+    const audioKey = 'dojo.audio-settings.v1'
+    const apiKey = 'dojo.openai-api-key.v1'
+    const sessionsKey = 'dojo.interview-sessions.v1'
+    const preservedAudio =
+      '{"masterVolume":25,"musicVolume":30,"voiceVolume":35,"soundEffectsVolume":40}'
+    const preservedApiKey = '"sk-dojo-preserved-key"'
+    const preservedSessions =
+      '[{"id":"preserved-session","config":{"interviewObjectives":"Preserve this session.","backgroundContext":"A transient storage failure occurred."},"title":"Preserved session","description":"This session must not be overwritten.","tags":["storage"],"createdAt":1,"lastActivatedAt":1,"transcript":[]}]'
+    storage.setItem(audioKey, preservedAudio)
+    storage.setItem(apiKey, preservedApiKey)
+    storage.setItem(sessionsKey, preservedSessions)
+
+    const failedReads = new Set<string>()
+    const writes: Array<string> = []
+    Reflect.set(window, 'dojoSettingsStorageWrites', writes)
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get: () => ({
+        get length() {
+          return storage.length
+        },
+        clear: () => storage.clear(),
+        getItem: (key: string) => {
+          if (
+            (key === audioKey || key === apiKey || key === sessionsKey) &&
+            !failedReads.has(key)
+          ) {
+            failedReads.add(key)
+            throw new DOMException('Transient read failure', 'UnknownError')
+          }
+          return storage.getItem(key)
+        },
+        key: (index: number) => storage.key(index),
+        removeItem: (key: string) => storage.removeItem(key),
+        setItem: (key: string, value: string) => {
+          writes.push(key)
+          storage.setItem(key, value)
+        },
+      }),
+    })
+    HTMLMediaElement.prototype.play = () => Promise.resolve()
+  })
+
+  await page.goto('/settings')
+  await page.waitForTimeout(300)
+  expect(
+    await page.evaluate(() => Reflect.get(window, 'dojoSettingsStorageWrites')),
+  ).toEqual([])
+  expect(
+    await page.evaluate(() => localStorage.getItem('dojo.audio-settings.v1')),
+  ).toBe(
+    '{"masterVolume":25,"musicVolume":30,"voiceVolume":35,"soundEffectsVolume":40}',
+  )
+  expect(
+    await page.evaluate(() => localStorage.getItem('dojo.openai-api-key.v1')),
+  ).toBe('"sk-dojo-preserved-key"')
+  expect(
+    await page.evaluate(() => localStorage.getItem('dojo.interview-sessions.v1')),
+  ).toContain('preserved-session')
+
+  await page.getByRole('slider', { name: 'Master Volume' }).press('End')
+  await page.waitForFunction(() => {
+    const writes = Reflect.get(window, 'dojoSettingsStorageWrites')
+    return Array.isArray(writes) && writes.includes('dojo.audio-settings.v1')
+  })
 })
 
 test('playback ignores stale attempts and retries after interaction', async ({ page }) => {

@@ -108,6 +108,7 @@ export type MusicDuckingState = typeof MusicDuckingState.Type
 /** Pure Interview feature state. Stateful SDK handles live outside this model. */
 export class Model extends Schema.Class<Model>('InterviewModel')({
   sessions: Schema.Array(InterviewSession),
+  shouldPersistSessions: Schema.Boolean,
   openAiApiKey: OpenAiApiKey,
   screen: InterviewScreen,
   activationRequestId: Schema.Natural,
@@ -126,6 +127,7 @@ export const init = (
 ): Model =>
   new Model({
     sessions,
+    shouldPersistSessions: false,
     openAiApiKey,
     screen: ChooseInterview(),
     activationRequestId: 0,

@@ -4,12 +4,21 @@ test('the desktop app navigates from the Dojo menu', async (
   { browserName: _browserName },
   testInfo,
 ) => {
+  const userDataDirectory = testInfo.outputPath('electron-profile')
   const application = await electron.launch({
-    args: ['.', `--user-data-dir=${testInfo.outputPath('electron-profile')}`],
+    args: ['.'],
     cwd: new URL('../packages/desktop/', import.meta.url).pathname,
+    env: {
+      ...process.env,
+      DOJO_RENDERER_URL: 'http://127.0.0.1:7782',
+      DOJO_USER_DATA_DIR: userDataDirectory,
+    },
   })
 
   try {
+    expect(
+      await application.evaluate(({ app }) => app.getPath('userData')),
+    ).toBe(userDataDirectory)
     const window = await application.firstWindow()
     await expect(window.getByTestId('dojo-art')).toBeVisible()
     await window.getByRole('link', { name: 'Sketch' }).click()
@@ -53,12 +62,20 @@ test('the desktop app persists OpenAI credentials across restarts', async (
   const userDataDirectory = testInfo.outputPath('electron-profile')
   const launch = () =>
     electron.launch({
-      args: ['.', `--user-data-dir=${userDataDirectory}`],
+      args: ['.'],
       cwd: new URL('../packages/desktop/', import.meta.url).pathname,
+      env: {
+        ...process.env,
+        DOJO_RENDERER_URL: 'http://127.0.0.1:7782',
+        DOJO_USER_DATA_DIR: userDataDirectory,
+      },
     })
   const application = await launch()
 
   try {
+    expect(
+      await application.evaluate(({ app }) => app.getPath('userData')),
+    ).toBe(userDataDirectory)
     const window = await application.firstWindow()
     await window.getByRole('link', { name: 'Settings' }).click()
     await window.locator('#openai-api-key').fill('sk-dojo-desktop-test-key')
@@ -73,6 +90,9 @@ test('the desktop app persists OpenAI credentials across restarts', async (
 
   const restartedApplication = await launch()
   try {
+    expect(
+      await restartedApplication.evaluate(({ app }) => app.getPath('userData')),
+    ).toBe(userDataDirectory)
     const window = await restartedApplication.firstWindow()
     await window.getByRole('link', { name: 'Settings' }).click()
     await expect(window.locator('#openai-api-key')).toHaveValue(

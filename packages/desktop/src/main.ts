@@ -5,6 +5,15 @@ import { app, BrowserWindow, session, shell } from 'electron'
 
 const electronRuntime = ManagedRuntime.make(Layer.empty)
 
+const userDataDirectory = Effect.runSync(
+  Config.option(Config.nonEmptyString('DOJO_USER_DATA_DIR')),
+)
+
+Option.match(userDataDirectory, {
+  onNone: () => undefined,
+  onSome: directory => app.setPath('userData', directory),
+})
+
 const developmentRendererUrl = Effect.runSync(
   Config.option(Config.url('DOJO_RENDERER_URL')),
 )

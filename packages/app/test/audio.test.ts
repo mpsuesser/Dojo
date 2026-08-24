@@ -89,4 +89,40 @@ describe('audio lifecycle', () => {
     expect(cancelled.audioSettings.masterVolume).toBe(70)
     expect(cancelled.masterVolumeSlider.dragState._tag).toBe('Idle')
   })
+
+  test('does not persist settings until the user changes them', () => {
+    const initial = Settings.init(defaultAudioSettings)
+    expect(initial.shouldPersistAudioSettings).toBe(false)
+    expect(initial.shouldPersistOpenAiApiKey).toBe(false)
+    expect(
+      Settings.audioSubscriptions.persistAudioSettings.modelToDependencies(
+        initial,
+      ).shouldPersistAudioSettings,
+    ).toBe(false)
+    expect(
+      Settings.audioSubscriptions.persistOpenAiApiKey.modelToDependencies(
+        initial,
+      ).shouldPersistOpenAiApiKey,
+    ).toBe(false)
+
+    const [pressed] = Settings.update(
+      initial,
+      Settings.GotMusicVolumeSliderMessage({
+        message: Slider.PressedThumb({ originValue: 45 }),
+      }),
+    )
+    const [changedAudio] = Settings.update(
+      pressed,
+      Settings.GotMusicVolumeSliderMessage({
+        message: Slider.MovedDragPointer({ value: 20 }),
+      }),
+    )
+    const [changedApiKey] = Settings.update(
+      initial,
+      Settings.ChangedOpenAiApiKey({ value: Settings.emptyOpenAiApiKey }),
+    )
+
+    expect(changedAudio.shouldPersistAudioSettings).toBe(true)
+    expect(changedApiKey.shouldPersistOpenAiApiKey).toBe(true)
+  })
 })

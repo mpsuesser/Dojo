@@ -1,8 +1,10 @@
 import { OPENAI_API_KEYS_URL } from '@dojo/shared'
 import { describe, test } from '@effect/vitest'
+import * as Redacted from 'effect/Redacted'
 import { expect, given, role, scene, selector } from 'foldkit/scene'
 
 import { defaultAudioSettings } from '../src/audio/settings.ts'
+import { TranscriptTurn } from '../src/interview/domain.ts'
 import * as Interview from '../src/interview/main.ts'
 import { type Model, update, view } from '../src/main.ts'
 import {
@@ -25,6 +27,47 @@ const modelFor = (route: AppRoute): Model => ({
   sketch: Sketch.init(),
   interview: Interview.init(Settings.emptyOpenAiApiKey),
 })
+
+const interviewApiKey = Redacted.make('sk-test', {
+  label: 'OpenAI API key',
+})
+
+const interviewSession = new Interview.InterviewSession({
+  id: 'session-1',
+  config: new Interview.InterviewConfiguration({
+    interviewObjectives: 'Understand the decision.',
+    backgroundContext: 'The team is choosing a database.',
+  }),
+  title: 'Database decision',
+  description: 'A discussion of the database tradeoffs.',
+  tags: ['database', 'architecture'],
+  createdAt: 1,
+  lastActivatedAt: 1,
+  transcript: [
+    new TranscriptTurn({
+      id: 'turn-1',
+      role: 'interviewer',
+      text: 'What made this decision difficult?',
+      status: 'completed',
+    }),
+  ],
+})
+
+const activeInterviewModel = (): Interview.Model => {
+  const [pending] = Interview.update(
+    Interview.init(interviewApiKey),
+    Interview.ClickedBeginInterview(),
+  )
+  const [active] = Interview.update(
+    pending,
+    Interview.CompletedCreateInterview({
+      requestId: pending.activationRequestId,
+      session: interviewSession,
+      activationId: 'activation-1',
+    }),
+  )
+  return active
+}
 
 describe('Dojo view', () => {
   test('shows the Dojo menu on the home route', () => {
@@ -121,6 +164,41 @@ describe('Dojo view', () => {
       expect(role('button', { name: /Load a previous session/ })).toExist(),
       expect(role('dialog')).not.toExist(),
       expect(role('navigation')).not.toExist(),
+    )
+  })
+
+  test('keeps the live Interview scene focused on its pause control', () => {
+    scene(
+      { update, view },
+      given({
+        ...modelFor(InterviewRoute()),
+        interview: activeInterviewModel(),
+      }),
+      expect(role('button', { name: 'Pause interview' })).toExist(),
+      expect(selector('[data-testid="interview-energy-field"]')).toHaveAttr(
+        'aria-hidden',
+        'true',
+      ),
+      expect(selector('.interview-energy-trail-head')).toExist(),
+      expect(selector('.interview-transcript')).not.toExist(),
+    )
+  })
+
+  test('reveals the Interview transcript after pausing', () => {
+    const [paused] = Interview.update(
+      activeInterviewModel(),
+      Interview.ClickedPauseInterview(),
+    )
+
+    scene(
+      { update, view },
+      given({
+        ...modelFor(InterviewRoute()),
+        interview: paused,
+      }),
+      expect(selector('.interview-transcript')).toExist(),
+      expect(selector('[data-testid="interview-energy-field"]')).not.toExist(),
+      expect(role('button', { name: 'Pause interview' })).not.toExist(),
     )
   })
 })

@@ -406,6 +406,7 @@ const updateTranscript = (
                 lastActivatedAt: session.lastActivatedAt,
                 transcript,
               })),
+          shouldPersistSessions: () => true,
         })
         : model,
   })
@@ -567,6 +568,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         evo(model, {
           activationPending: () => false,
           sessions: sessions => Arr.filter(sessions, session => !sameString(session.id, sessionId)),
+          shouldPersistSessions: () => true,
           screen: () => BrowseInterviews({ query: '' }),
           transcriptCopyState: () => 'Idle',
           notice: () => Option.none(),
@@ -589,6 +591,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             evo(model, {
               activationPending: () => false,
               sessions: sessions => Arr.prepend(sessions, session),
+              shouldPersistSessions: () => true,
               screen: () =>
                 ActiveInterview({
                   sessionId: session.id,
@@ -636,6 +639,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
                     lastActivatedAt: activatedAt,
                     transcript: session.transcript,
                   })),
+              shouldPersistSessions: () => true,
               screen: () =>
                 ActiveInterview({
                   sessionId,
@@ -710,6 +714,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
                 lastActivatedAt: session.lastActivatedAt,
                 transcript: session.transcript,
               })),
+          shouldPersistSessions: () => true,
         }),
         [],
         Option.none(),
@@ -815,15 +820,25 @@ export const subscriptions = Subscription.make<
     },
   ),
   persistSessions: entry(
-    { sessions: Schema.Array(InterviewSession) },
     {
-      modelToDependencies: model => ({ sessions: model.sessions }),
-      dependenciesToStream: ({ sessions }) =>
-        Stream.fromEffect(
-          persistSessions(sessions).pipe(
-            Effect.catch(() => Effect.logWarning('Interview sessions could not be persisted.')),
-          ),
-        ).pipe(Stream.drain),
+      sessions: Schema.Array(InterviewSession),
+      shouldPersistSessions: Schema.Boolean,
+    },
+    {
+      modelToDependencies: model => ({
+        sessions: model.sessions,
+        shouldPersistSessions: model.shouldPersistSessions,
+      }),
+      dependenciesToStream: ({ sessions, shouldPersistSessions }) =>
+        Bool.match(shouldPersistSessions, {
+          onFalse: () => Stream.empty,
+          onTrue: () =>
+            Stream.fromEffect(
+              persistSessions(sessions).pipe(
+                Effect.catch(() => Effect.logWarning('Interview sessions could not be persisted.')),
+              ),
+            ).pipe(Stream.drain),
+        }),
     },
   ),
 }))
@@ -1111,44 +1126,161 @@ const reviewView = (
   )
 
 const activeView = (
-  session: InterviewSession,
   connectionState: 'Connecting' | 'Connected',
   h: HtmlBuilder<Message>,
 ): Html =>
   h.div(
     [h.Class('interview-active')],
     [
-      h.header(
-        [h.Class('interview-live-header')],
+      h.span(
         [
-          h.div(
-            [h.Class('interview-live-status')],
-            [
-              h.span([h.Class('interview-live-orb')]),
-              h.span([], [
-                connectionState === 'Connected'
-                  ? 'Interview live'
-                  : 'Opening the voice channel...',
-              ]),
-            ],
-          ),
-          h.button(
-            [
-              h.Type('button'),
-              h.Class('interview-pause-button'),
-              h.OnClick(ClickedPauseInterview()),
-            ],
-            ['Pause interview'],
-          ),
+          h.Class('interview-live-announcement'),
+          h.Attribute('role', 'status'),
+          h.Attribute('aria-live', 'polite'),
+        ],
+        [
+          connectionState === 'Connected'
+            ? 'Interview live'
+            : 'Opening the voice channel...',
         ],
       ),
-      h.div(
+      h.button(
         [
-          h.Class('interview-transcript interview-transcript-live'),
-          h.Attribute('aria-live', 'polite'),
-          h.Attribute('aria-label', 'Live interview transcript'),
+          h.Type('button'),
+          h.Class('interview-pause-button interview-active-pause'),
+          h.AriaLabel('Pause interview'),
+          h.OnClick(ClickedPauseInterview()),
         ],
-        transcriptTurns(session.transcript, h),
+        [
+          h.span([
+            h.Class('interview-pause-glyph'),
+            h.Attribute('aria-hidden', 'true'),
+          ]),
+          h.span([], ['Pause interview']),
+        ],
+      ),
+    ],
+  )
+
+const energyStrand = (
+  className: string,
+  path: string,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.g(
+    [h.Class(`interview-energy-strand ${className}`)],
+    [
+      h.path([
+        h.Class('interview-energy-bed'),
+        h.D(path),
+      ]),
+      h.path([
+        h.Class('interview-energy-moving interview-energy-trail-glow'),
+        h.D(path),
+        h.PathLength('100'),
+        h.Filter('url(#interview-energy-blur)'),
+      ]),
+      h.path([
+        h.Class('interview-energy-moving interview-energy-trail-core'),
+        h.D(path),
+        h.PathLength('100'),
+      ]),
+      h.path([
+        h.Class('interview-energy-moving interview-energy-trail-head'),
+        h.D(path),
+        h.PathLength('100'),
+      ]),
+    ],
+  )
+
+const activeEnergyField = (
+  connectionState: 'Connecting' | 'Connected',
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.svg(
+    [
+      h.Class('interview-energy-field'),
+      h.Attribute('aria-hidden', 'true'),
+      h.Attribute('focusable', 'false'),
+      h.Attribute('data-connection-state', connectionState),
+      h.Attribute('data-testid', 'interview-energy-field'),
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 600 330'),
+      h.PreserveAspectRatio('none'),
+      h.StrokeLinecap('round'),
+      h.StrokeLinejoin('round'),
+    ],
+    [
+      h.defs([], [
+        h.clipPath(
+          [h.Id('interview-energy-clip')],
+          [
+            h.path([
+              h.Class('interview-energy-clip-shape'),
+              h.D(
+                'M 68 36 C 160 16 445 16 525 48 L 528 217 C 492 271 406 300 305 302 C 198 300 104 271 68 218 Z',
+              ),
+            ]),
+          ],
+        ),
+        h.filter(
+          [
+            h.Id('interview-energy-blur'),
+            h.FilterUnits('userSpaceOnUse'),
+            h.X('-30'),
+            h.Y('-30'),
+            h.Width('660'),
+            h.Height('390'),
+          ],
+          [
+            h.feGaussianBlur([
+              h.Attribute('stdDeviation', '4.5'),
+            ]),
+          ],
+        ),
+      ]),
+      h.g(
+        [h.ClipPath('url(#interview-energy-clip)')],
+        [
+          energyStrand(
+            'interview-energy-strand-amber-outer',
+            'M 306 244 C 250 251 160 237 103 205 C 65 183 65 126 116 85 C 171 51 239 60 296 99 C 349 135 382 179 431 201 C 397 222 354 238 306 244',
+            h,
+          ),
+          energyStrand(
+            'interview-energy-strand-amber-inner',
+            'M 305 244 C 265 221 215 190 198 156 C 180 121 214 93 263 101 C 315 110 350 150 387 181 C 410 201 431 207 451 201 C 421 231 358 257 305 244',
+            h,
+          ),
+          energyStrand(
+            'interview-energy-strand-cyan-outer',
+            'M 304 244 C 367 255 451 239 492 203 C 520 177 514 121 472 85 C 428 48 367 54 317 82 C 268 109 244 149 264 183 C 287 222 355 237 416 212 C 466 190 495 150 476 117 C 456 81 405 72 356 91 C 311 108 279 144 258 178 C 240 208 261 233 304 244',
+            h,
+          ),
+          energyStrand(
+            'interview-energy-strand-cyan-inner',
+            'M 304 244 C 343 218 391 190 410 157 C 429 124 412 99 375 96 C 334 92 296 118 276 153 C 257 187 269 221 304 244 C 347 270 413 253 459 220 C 496 190 502 148 478 115 C 451 80 396 70 344 87 C 293 105 259 143 260 181 C 260 215 282 235 304 244',
+            h,
+          ),
+          energyStrand(
+            'interview-energy-strand-crossing',
+            'M 101 199 C 166 223 225 190 277 154 C 330 117 400 118 492 184',
+            h,
+          ),
+          h.circle([
+            h.Class('interview-energy-nexus-glow'),
+            h.Cx('305'),
+            h.Cy('244'),
+            h.R('22'),
+            h.Filter('url(#interview-energy-blur)'),
+          ]),
+          h.circle([
+            h.Class('interview-energy-nexus-core'),
+            h.Cx('305'),
+            h.Cy('244'),
+            h.R('3.5'),
+          ]),
+        ],
       ),
     ],
   )
@@ -1172,7 +1304,7 @@ const screenView = (
       ActiveInterview: ({ sessionId, connectionState }) =>
         Option.match(findSession(model.sessions, sessionId), {
           onNone: () => chooseView(model, h),
-          onSome: session => activeView(session, connectionState, h),
+          onSome: () => activeView(connectionState, h),
         }),
     }),
   )
@@ -1181,7 +1313,12 @@ export const view = Submodel.defineView<Model, Message, ViewInputs>(
   (model, viewInputs, h): Html =>
     h.main(
       [
-        h.Class('interview-shell'),
+        h.Class(
+          M.value(model.screen).pipe(
+            M.tag('ActiveInterview', () => 'interview-shell interview-shell-active'),
+            M.orElse(() => 'interview-shell'),
+          ),
+        ),
         h.Attribute('data-testid', 'interview-page'),
       ],
       [
@@ -1191,6 +1328,13 @@ export const view = Submodel.defineView<Model, Message, ViewInputs>(
           h.Class('interview-art'),
           h.Attribute('data-testid', 'interview-splash'),
         ]),
+        ...M.value(model.screen).pipe(
+          M.withReturnType<ReadonlyArray<Html>>(),
+          M.tag('ActiveInterview', ({ connectionState }) => [
+            activeEnergyField(connectionState, h),
+          ]),
+          M.orElse(() => []),
+        ),
         h.header(
           [h.Class('dojo-page-masthead interview-masthead')],
           [

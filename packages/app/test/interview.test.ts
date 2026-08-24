@@ -20,6 +20,7 @@ import {
   InterviewSession,
   managedResources,
   ReceivedRealtimeInterviewEvent,
+  subscriptions,
   update,
 } from '../src/interview/main.ts'
 import {
@@ -60,7 +61,14 @@ describe('Interview state machine', () => {
   })
 
   test('starts, transcribes, and pauses a session through explicit events', () => {
-    const [pending] = update(init(apiKey), ClickedBeginInterview())
+    const initial = init(apiKey)
+    expect(initial.shouldPersistSessions).toBe(false)
+    expect(
+      subscriptions.persistSessions.modelToDependencies(initial)
+        .shouldPersistSessions,
+    ).toBe(false)
+
+    const [pending] = update(initial, ClickedBeginInterview())
     const [active] = update(
       pending,
       CompletedCreateInterview({
@@ -78,6 +86,7 @@ describe('Interview state machine', () => {
       }),
     )
     expect(active.musicDuckingState).toBe('Muted')
+    expect(active.shouldPersistSessions).toBe(true)
 
     const transcript = [
       new TranscriptTurn({

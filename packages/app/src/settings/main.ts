@@ -1,4 +1,5 @@
 import { Duration, Effect, Match as M, Option, Stream } from 'effect'
+import * as Bool from 'effect/Boolean'
 import * as Redacted from 'effect/Redacted'
 import * as Schema from 'effect/Schema'
 import { Command, Subscription } from 'foldkit'
@@ -130,6 +131,8 @@ const persistOpenAiApiKey = Effect.fn('OpenAiApiKey.persist')(function* (
 export const Model = Schema.Struct({
   audioSettings: AudioSettings,
   openAiApiKey: OpenAiApiKey,
+  shouldPersistAudioSettings: Schema.Boolean,
+  shouldPersistOpenAiApiKey: Schema.Boolean,
   isOpenAiApiKeyVisible: Schema.Boolean,
   masterVolumeSlider: Slider.Model,
   musicVolumeSlider: Slider.Model,
@@ -183,6 +186,8 @@ export const init = (
 ): Model => ({
   audioSettings,
   openAiApiKey,
+  shouldPersistAudioSettings: false,
+  shouldPersistOpenAiApiKey: false,
   isOpenAiApiKeyVisible: false,
   masterVolumeSlider: sliderModel('master-volume'),
   musicVolumeSlider: sliderModel('music-volume'),
@@ -282,7 +287,10 @@ const updateVolumeSlider = (
               value,
             )
             return [
-              evo(nextModel, { audioSettings: () => audioSettings }),
+              evo(nextModel, {
+                audioSettings: () => audioSettings,
+                shouldPersistAudioSettings: () => true,
+              }),
               commands,
               Option.none(),
             ]
@@ -298,7 +306,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     M.tagsExhaustive({
       ClickedClose: () => [model, [], Option.some(RequestedClose())],
       ChangedOpenAiApiKey: ({ value }) => [
-        evo(model, { openAiApiKey: () => value }),
+        evo(model, {
+          openAiApiKey: () => value,
+          shouldPersistOpenAiApiKey: () => true,
+        }),
         [],
         Option.none(),
       ],
@@ -430,25 +441,49 @@ export const audioSubscriptions = Subscription.make<
     },
   ),
   persistAudioSettings: entry(
-    { audioSettings: AudioSettings },
+    {
+      audioSettings: AudioSettings,
+      shouldPersistAudioSettings: Schema.Boolean,
+    },
     {
       modelToDependencies: model => ({
         audioSettings: model.audioSettings,
+        shouldPersistAudioSettings: model.shouldPersistAudioSettings,
       }),
-      dependenciesToStream: ({ audioSettings }) =>
-        Stream.fromEffect(persistAudioSettings(audioSettings)).pipe(
-          Stream.drain,
-        ),
+      dependenciesToStream: ({
+        audioSettings,
+        shouldPersistAudioSettings,
+      }) =>
+        Bool.match(shouldPersistAudioSettings, {
+          onFalse: () => Stream.empty,
+          onTrue: () =>
+            Stream.fromEffect(persistAudioSettings(audioSettings)).pipe(
+              Stream.drain,
+            ),
+        }),
     },
   ),
   persistOpenAiApiKey: entry(
-    { openAiApiKey: OpenAiApiKey },
+    {
+      openAiApiKey: OpenAiApiKey,
+      shouldPersistOpenAiApiKey: Schema.Boolean,
+    },
     {
       modelToDependencies: model => ({
         openAiApiKey: model.openAiApiKey,
+        shouldPersistOpenAiApiKey: model.shouldPersistOpenAiApiKey,
       }),
-      dependenciesToStream: ({ openAiApiKey }) =>
-        Stream.fromEffect(persistOpenAiApiKey(openAiApiKey)).pipe(Stream.drain),
+      dependenciesToStream: ({
+        openAiApiKey,
+        shouldPersistOpenAiApiKey,
+      }) =>
+        Bool.match(shouldPersistOpenAiApiKey, {
+          onFalse: () => Stream.empty,
+          onTrue: () =>
+            Stream.fromEffect(persistOpenAiApiKey(openAiApiKey)).pipe(
+              Stream.drain,
+            ),
+        }),
     },
   ),
 }))
