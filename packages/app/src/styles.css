@@ -928,7 +928,7 @@ body {
 
 .interview-workspace-kicker,
 .interview-notice,
-.interview-field-hint,
+.interview-panel-title,
 .interview-search-label,
 .interview-turn-role {
   font-family: ui-sans-serif, system-ui, sans-serif;
@@ -953,54 +953,107 @@ body {
 }
 
 .interview-choice-grid {
+  position: absolute;
+  top: calc(43.3cqh - max(7.8rem, 88px) - 4.65rem);
+  left: -5.5rem;
   display: grid;
-  width: min(30rem, 100%);
-  justify-self: center;
+  width: 13rem;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.65rem;
+  gap: 0.55rem;
+  filter: drop-shadow(0 0.7rem 0.55rem rgb(0 0 0 / 72%));
 }
 
 .interview-choice {
   position: relative;
   display: flex;
-  min-height: 5rem;
+  min-height: max(3.9rem, 44px);
   align-items: center;
-  padding: 1.15rem 1.25rem 1.25rem;
+  justify-content: center;
+  padding: 0.65rem 1.15rem 0.7rem;
   overflow: hidden;
-  border: 1px solid rgb(218 163 95 / 22%);
+  border: 0;
+  border-radius: 0;
+  appearance: none;
   color: inherit;
   background:
-    linear-gradient(145deg, rgb(91 51 34 / 30%), rgb(11 15 25 / 74%) 58%),
-    rgb(9 10 16 / 75%);
-  text-align: left;
+    radial-gradient(ellipse at 18% 58%, transparent 0 0.18rem, rgb(25 12 7 / 52%) 0.2rem 0.23rem, transparent 0.26rem),
+    radial-gradient(ellipse at 78% 28%, transparent 0 0.12rem, rgb(24 12 7 / 42%) 0.14rem 0.17rem, transparent 0.2rem),
+    repeating-linear-gradient(2deg, transparent 0 0.28rem, rgb(19 9 5 / 18%) 0.3rem, transparent 0.33rem 0.58rem),
+    linear-gradient(96deg, #24130d, #55331f 20%, #382116 47%, #684127 72%, #2b1810);
+  text-align: center;
   cursor: pointer;
-  clip-path: polygon(0.45rem 0, 100% 0, 100% calc(100% - 0.45rem), calc(100% - 0.45rem) 100%, 0 100%, 0 0.45rem);
-  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+  filter: brightness(0.3);
+  box-shadow:
+    inset 0 0 0 1px rgb(25 12 7 / 82%),
+    inset 0 0.35rem 0.7rem rgb(8 4 2 / 34%),
+    inset 0 -0.35rem 0.55rem rgb(8 4 2 / 40%);
+  transition: filter 120ms ease;
 }
 
-.interview-choice-load {
-  border-color: rgb(100 184 190 / 24%);
+.interview-choice::before {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  content: '';
+  pointer-events: none;
   background:
-    linear-gradient(145deg, rgb(24 75 82 / 28%), rgb(10 15 25 / 76%) 58%),
-    rgb(9 10 16 / 75%);
+    radial-gradient(ellipse 43% 68% at 50% 50%, transparent 38%, #120d0a 42% 49%, #745b3f 53%, #2a1d14 61%, transparent 65%) top left / 0.92rem 0.54rem repeat-x,
+    radial-gradient(ellipse 43% 68% at 50% 50%, transparent 38%, #120d0a 42% 49%, #745b3f 53%, #2a1d14 61%, transparent 65%) bottom left / 0.92rem 0.54rem repeat-x,
+    radial-gradient(ellipse 68% 43% at 50% 50%, transparent 38%, #120d0a 42% 49%, #745b3f 53%, #2a1d14 61%, transparent 65%) top left / 0.54rem 0.92rem repeat-y,
+    radial-gradient(ellipse 68% 43% at 50% 50%, transparent 38%, #120d0a 42% 49%, #745b3f 53%, #2a1d14 61%, transparent 65%) top right / 0.54rem 0.92rem repeat-y,
+    linear-gradient(#21160f, #4b3827 48%, #17100c) top 0.22rem left / 100% 0.11rem no-repeat,
+    linear-gradient(#17100c, #4b3827 48%, #21160f) bottom 0.22rem left / 100% 0.11rem no-repeat,
+    linear-gradient(90deg, #21160f, #4b3827 48%, #17100c) top left 0.22rem / 0.11rem 100% no-repeat,
+    linear-gradient(90deg, #17100c, #4b3827 48%, #21160f) top right 0.22rem / 0.11rem 100% no-repeat;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 88%));
+  opacity: 0.96;
 }
 
-.interview-choice:hover,
+.interview-choice::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0.48rem;
+  border: 1px solid rgb(20 10 6 / 72%);
+  content: '';
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 rgb(139 90 50 / 13%),
+    0 1px 0 rgb(111 71 40 / 13%);
+}
+
+.interview-choice:hover {
+  filter: brightness(0.4);
+}
+
 .interview-choice:focus-visible {
-  border-color: rgb(230 178 111 / 62%);
-  outline: 0;
-  transform: translateY(-0.12rem);
+  box-shadow:
+    inset 0 0 0 1px rgb(25 12 7 / 92%),
+    inset 0 0.35rem 0.7rem rgb(8 4 2 / 44%),
+    inset 0 -0.35rem 0.55rem rgb(8 4 2 / 48%);
 }
 
-.interview-choice-load:hover,
-.interview-choice-load:focus-visible {
-  border-color: rgb(111 202 206 / 60%);
+.interview-choice:focus-visible {
+  outline: 2px solid #c8a475;
+  outline-offset: 4px;
+}
+
+.interview-choice:active {
+  filter: brightness(0.25);
 }
 
 .interview-choice-title {
-  color: #f1e5d4;
-  font-size: 1.25rem;
-  line-height: 1.08;
+  position: relative;
+  z-index: 3;
+  padding-left: 0.28em;
+  color: #e4cfaa;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: max(1.05rem, 11px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.28em;
+  text-shadow:
+    0 1px 0 #130b08,
+    0 2px 0.2rem rgb(0 0 0 / 86%);
 }
 
 .interview-configure,
@@ -1018,8 +1071,17 @@ body {
 }
 
 .interview-browser {
-  width: min(40rem, 100%);
+  width: min(14.5rem, 100%);
   justify-self: center;
+}
+
+.interview-workspace-heading:empty + .interview-configure,
+.interview-workspace-heading:empty + .interview-browser {
+  margin-top: 1.95rem;
+}
+
+.interview-browser .interview-search {
+  margin-top: 1.8rem;
 }
 
 .interview-review {
@@ -1047,6 +1109,55 @@ body {
   outline: 0;
 }
 
+.interview-panel-header {
+  position: relative;
+  display: flex;
+  min-height: 1.05rem;
+  align-items: center;
+}
+
+.interview-panel-back-arrow {
+  position: absolute;
+  top: 50%;
+  left: -1.5rem;
+  z-index: 1;
+  display: flex;
+  width: calc(100% + 1.5rem);
+  height: 1.05rem;
+  padding: 0;
+  border: 0;
+  align-items: center;
+  color: rgb(179 196 207 / 62%);
+  background: transparent;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.interview-panel-back-glyph {
+  display: grid;
+  width: 1.05rem;
+  height: 1.05rem;
+  place-items: center;
+}
+
+.interview-panel-back-arrow:hover,
+.interview-panel-back-arrow:focus-visible {
+  color: #e8bd83;
+  outline: 0;
+}
+
+.interview-panel-title {
+  margin: 0;
+  color: rgb(220 176 116 / 70%);
+  font-size: 0.56rem;
+  font-weight: 720;
+  letter-spacing: 0.14em;
+  pointer-events: none;
+}
+
 .interview-form-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1066,13 +1177,6 @@ body {
   letter-spacing: 0.035em;
 }
 
-.interview-field-hint {
-  color: rgb(164 189 196 / 45%);
-  font-size: 0.48rem;
-  font-weight: 680;
-  letter-spacing: 0.08em;
-}
-
 .interview-textarea,
 .interview-search-input {
   border: 1px solid rgb(130 169 176 / 24%);
@@ -1085,11 +1189,12 @@ body {
 
 .interview-textarea {
   width: 100%;
-  min-height: 10.5rem;
+  min-height: 15.946875rem;
   padding: 0.75rem 0.8rem;
   resize: none;
   font-size: 0.68rem;
   line-height: 1.5;
+  background: rgb(0 0 0 / 95%);
 }
 
 .interview-textarea:focus-visible,
@@ -1669,22 +1774,18 @@ body {
     gap: 0.15rem;
   }
 
-  .interview-field-hint {
-    display: none;
-  }
-
   .interview-workspace-kicker,
   .interview-notice,
   .interview-panel-back,
+  .interview-panel-title,
   .interview-search-label,
-  .interview-field-hint,
   .interview-turn-role {
     font-size: 1.55rem;
   }
 
   .interview-choice {
-    min-height: 12rem;
-    padding: 2.2rem 2.5rem;
+    min-height: max(3.9rem, 44px);
+    padding: max(0.55rem, 4px) max(0.5rem, 4px);
   }
 
   .interview-session-description,
@@ -1698,13 +1799,17 @@ body {
     font-size: 3.4rem;
   }
 
+  .interview-choice-title {
+    font-size: max(1.05rem, 11px);
+  }
+
   .interview-field-label,
   .interview-session-title {
     font-size: 2.6rem;
   }
 
   .interview-textarea {
-    min-height: 9rem;
+    min-height: 13.66875rem;
     padding: 1rem;
     font-size: 2rem;
   }

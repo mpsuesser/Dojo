@@ -857,6 +857,34 @@ const panelBackButton = (h: HtmlBuilder<Message>): Html =>
     ['Back'],
   )
 
+const panelHeader = (
+  title: string,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.header(
+    [h.Class('interview-panel-header')],
+    [
+      h.button(
+        [
+          h.Type('button'),
+          h.Class('interview-panel-back-arrow'),
+          h.AriaLabel('Back to interview choices'),
+          h.OnClick(ClickedBackToChooser()),
+        ],
+        [
+          h.span(
+            [
+              h.Class('interview-panel-back-glyph'),
+              h.Attribute('aria-hidden', 'true'),
+            ],
+            ['←'],
+          ),
+        ],
+      ),
+      h.h2([h.Class('interview-panel-title')], [title]),
+    ],
+  )
+
 const chooseView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [h.Class('interview-choice-grid')],
@@ -865,17 +893,19 @@ const chooseView = (model: Model, h: HtmlBuilder<Message>): Html =>
         [
           h.Type('button'),
           h.Class('interview-choice interview-choice-new'),
+          h.AriaLabel('Begin a new interview'),
           h.OnClick(ClickedConfigureNew()),
         ],
-        [h.span([h.Class('interview-choice-title')], ['Begin a new interview'])],
+        [h.span([h.Class('interview-choice-title')], ['NEW'])],
       ),
       h.button(
         [
           h.Type('button'),
           h.Class('interview-choice interview-choice-load'),
+          h.AriaLabel('Load a previous session'),
           h.OnClick(ClickedLoadPrevious()),
         ],
-        [h.span([h.Class('interview-choice-title')], ['Load a previous session'])],
+        [h.span([h.Class('interview-choice-title')], ['LOAD'])],
       ),
     ],
   )
@@ -890,7 +920,7 @@ const configureView = (
   return h.div(
     [h.Class('interview-configure')],
     [
-      panelBackButton(h),
+      panelHeader('New session', h),
       h.div(
         [h.Class('interview-form-grid')],
         [
@@ -898,9 +928,6 @@ const configureView = (
             [h.For('interview-objectives'), h.Class('interview-field')],
             [
               h.span([h.Class('interview-field-label')], ['Interview objectives']),
-              h.span([h.Class('interview-field-hint')], [
-                'What should this conversation uncover?',
-              ]),
               h.textarea([
                 h.Id('interview-objectives'),
                 h.Value(model.interviewObjectivesDraft),
@@ -913,9 +940,6 @@ const configureView = (
             [h.For('interview-context'), h.Class('interview-field')],
             [
               h.span([h.Class('interview-field-label')], ['Background context']),
-              h.span([h.Class('interview-field-hint')], [
-                'What should the interviewer know before speaking?',
-              ]),
               h.textarea([
                 h.Id('interview-context'),
                 h.Value(model.backgroundContextDraft),
@@ -940,7 +964,7 @@ const configureView = (
               h.Disabled(!canBegin),
               h.OnClick(ClickedBeginInterview()),
             ],
-            [model.activationPending ? 'Preparing interview...' : 'Begin interview'],
+            [model.activationPending ? 'Preparing interview...' : 'Begin'],
           ),
           ...hasKey
             ? []
@@ -974,16 +998,16 @@ const browseView = (
   return h.div(
     [h.Class('interview-browser')],
     [
-      panelBackButton(h),
-      h.label(
+      h.div(
         [h.Class('interview-search')],
         [
-          h.span([h.Class('interview-search-label')], ['Find a session']),
+          panelHeader('Session archive', h),
           h.input([
             h.Type('search'),
             h.Value(query),
             h.Class('interview-search-input'),
-            h.Placeholder('Search titles, descriptions, tags, or context'),
+            h.AriaLabel('Search sessions'),
+            h.Placeholder('Search sessions'),
             h.OnInput(value => ChangedSessionSearch({ value })),
           ]),
         ],
@@ -1383,12 +1407,8 @@ export const view = Submodel.defineView<Model, Message, ViewInputs>(
                   M.tag('ReviewInterview', () => [
                     h.span([h.Class('interview-workspace-kicker')], ['Session archive']),
                   ]),
-                  M.tag('BrowseInterviews', () => [
-                    h.span([h.Class('interview-workspace-kicker')], ['Session archive']),
-                  ]),
-                  M.tag('ConfigureInterview', () => [
-                    h.span([h.Class('interview-workspace-kicker')], ['New session']),
-                  ]),
+                  M.tag('BrowseInterviews', () => []),
+                  M.tag('ConfigureInterview', () => []),
                   M.tag('ChooseInterview', () => []),
                   M.exhaustive,
                 ),

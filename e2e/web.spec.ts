@@ -36,6 +36,146 @@ test('settings controls retain usable mobile hit areas', async ({ page }) => {
   expect(homeBounds.height).toBeGreaterThanOrEqual(40)
 })
 
+test('interview choices center matching plaques on the left pillar', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/interview')
+
+  const newInterview = page.getByRole('button', {
+    name: 'Begin a new interview',
+  })
+  const loadInterview = page.getByRole('button', {
+    name: 'Load a previous session',
+  })
+  await expect(newInterview).toHaveText('NEW')
+  await expect(loadInterview).toHaveText('LOAD')
+  await page.locator('.interview-workspace').evaluate(async workspace => {
+    await Promise.all(workspace.getAnimations().map(animation => animation.finished))
+  })
+  await expect(newInterview).toHaveCSS('filter', 'brightness(0.3)')
+  await newInterview.hover()
+  await expect(newInterview).toHaveCSS('filter', 'brightness(0.4)')
+  await expect(loadInterview).toHaveCSS('filter', 'brightness(0.3)')
+
+  const stageBounds = await page.getByTestId('scene-stage').boundingBox()
+  const newBounds = await newInterview.boundingBox()
+  const loadBounds = await loadInterview.boundingBox()
+  expect(stageBounds).not.toBeNull()
+  expect(newBounds).not.toBeNull()
+  expect(loadBounds).not.toBeNull()
+  if (!stageBounds || !newBounds || !loadBounds) return
+
+  expect(newBounds.width).toBeCloseTo(loadBounds.width, 1)
+  expect(newBounds.height).toBeCloseTo(loadBounds.height, 1)
+  expect(newBounds.x).toBeCloseTo(loadBounds.x, 1)
+  expect(newBounds.y + newBounds.height).toBeLessThan(loadBounds.y)
+
+  const choiceCenter = newBounds.x + newBounds.width / 2
+  const pillarCenterX = stageBounds.x + stageBounds.width * 0.274
+  expect(Math.abs(choiceCenter - pillarCenterX)).toBeLessThan(stageBounds.width * 0.01)
+
+  const hatTipY = stageBounds.y + stageBounds.height * 0.433
+  const hatGap = hatTipY - (loadBounds.y + loadBounds.height)
+  expect(hatGap).toBeGreaterThan(0)
+  expect(hatGap).toBeLessThan(stageBounds.height * 0.04)
+})
+
+test('interview setup and archive use aligned compact panels', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/interview')
+
+  await page.getByRole('button', { name: 'Begin a new interview' }).click()
+
+  const configurePanel = page.locator('.interview-configure')
+  const newSessionTitle = page.getByRole('heading', { name: 'New session' })
+  const configureBack = page.getByRole('button', {
+    name: 'Back to interview choices',
+  })
+  await expect(newSessionTitle).toBeVisible()
+  await expect(configureBack).toHaveText('←')
+  await expect(page.getByRole('button', { name: 'Begin', exact: true })).toHaveText('Begin')
+
+  const textareas = page.locator('.interview-textarea')
+  await expect(textareas).toHaveCount(2)
+  await expect(textareas.first()).toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0.95)',
+  )
+  const textareaBounds = await textareas.first().boundingBox()
+  expect(textareaBounds).not.toBeNull()
+  if (!textareaBounds) return
+  expect(textareaBounds.height).toBeCloseTo(
+    10.5 * 1.35 * 1.25 * 0.9 * 16,
+    0,
+  )
+
+  const configureBounds = await configurePanel.boundingBox()
+  const configureBackBounds = await configureBack.boundingBox()
+  const configureGlyphBounds = await configureBack
+    .locator('.interview-panel-back-glyph')
+    .boundingBox()
+  const newSessionTitleBounds = await newSessionTitle.boundingBox()
+  expect(configureBounds).not.toBeNull()
+  expect(configureBackBounds).not.toBeNull()
+  expect(configureGlyphBounds).not.toBeNull()
+  expect(newSessionTitleBounds).not.toBeNull()
+  if (
+    !configureBounds ||
+    !configureBackBounds ||
+    !configureGlyphBounds ||
+    !newSessionTitleBounds
+  ) return
+  expect(configureGlyphBounds.x + configureGlyphBounds.width).toBeLessThan(
+    newSessionTitleBounds.x,
+  )
+  expect(newSessionTitleBounds.x).toBeCloseTo(configureBounds.x, 1)
+  expect(configureBackBounds.x + configureBackBounds.width).toBeGreaterThanOrEqual(
+    newSessionTitleBounds.x + newSessionTitleBounds.width,
+  )
+  await page.mouse.move(
+    newSessionTitleBounds.x + newSessionTitleBounds.width / 2,
+    newSessionTitleBounds.y + newSessionTitleBounds.height / 2,
+  )
+  await expect(configureBack).toHaveCSS('color', 'rgb(232, 189, 131)')
+
+  await configureBack.click()
+  await page.getByRole('button', { name: 'Load a previous session' }).click()
+
+  const browserPanel = page.locator('.interview-browser')
+  const archiveTitle = page.getByRole('heading', { name: 'Session archive' })
+  const archiveBack = page.getByRole('button', {
+    name: 'Back to interview choices',
+  })
+  await expect(archiveTitle).toBeVisible()
+  await expect(archiveBack).toHaveText('←')
+  await expect(page.getByText('Find a session', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('searchbox', { name: 'Search sessions' })).toBeVisible()
+
+  const browserBounds = await browserPanel.boundingBox()
+  const archiveBackBounds = await archiveBack.boundingBox()
+  const archiveGlyphBounds = await archiveBack
+    .locator('.interview-panel-back-glyph')
+    .boundingBox()
+  const archiveTitleBounds = await archiveTitle.boundingBox()
+  expect(browserBounds).not.toBeNull()
+  expect(archiveBackBounds).not.toBeNull()
+  expect(archiveGlyphBounds).not.toBeNull()
+  expect(archiveTitleBounds).not.toBeNull()
+  if (
+    !browserBounds ||
+    !archiveBackBounds ||
+    !archiveGlyphBounds ||
+    !archiveTitleBounds
+  ) return
+  expect(browserBounds.width).toBeCloseTo(configureBounds.width, 1)
+  expect(archiveGlyphBounds.x + archiveGlyphBounds.width).toBeLessThan(
+    archiveTitleBounds.x,
+  )
+  expect(archiveTitleBounds.x).toBeCloseTo(browserBounds.x, 1)
+  expect(archiveBackBounds.x + archiveBackBounds.width).toBeGreaterThanOrEqual(
+    archiveTitleBounds.x + archiveTitleBounds.width,
+  )
+})
+
 test('the main menu navigates between Foldkit routes', async ({ page }) => {
   await page.goto('/')
 
@@ -229,7 +369,7 @@ test('OpenAI credentials stay masked, toggle visibility, and persist', async ({ 
   await page.getByRole('link', { name: 'Interview' }).click()
   await page.getByRole('button', { name: /Begin a new interview/ }).click()
   await expect(
-    page.getByRole('button', { name: 'Begin interview' }),
+    page.getByRole('button', { name: 'Begin', exact: true }),
   ).toBeEnabled()
 })
 
@@ -244,7 +384,7 @@ test('Interview configuration explains missing Realtime access and keeps drafts'
   await objectives.fill('Understand why the migration stalled.')
   await context.fill('The team has attempted the migration twice.')
 
-  const begin = page.getByRole('button', { name: 'Begin interview' })
+  const begin = page.getByRole('button', { name: 'Begin', exact: true })
   await expect(begin).toBeDisabled()
 
   const stageBounds = await page.getByTestId('scene-stage').boundingBox()
