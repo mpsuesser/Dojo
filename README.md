@@ -14,11 +14,7 @@
 <br>
 
 <p>
-  <strong>Dojo is a collection of specialized interfaces for getting what is in your head into a form that is maximally legible to an agent.</strong>
-</p>
-
-<p>
-  It treats elicitation as an interface-design problem. Each room is shaped around a different way of thinking, with an emphasis on user legibility and throughput.
+  Dojo is a collection of specialized interfaces for getting what is in your head into a form that is maximally legible to an agent. It treats elicitation as an interface-design problem. Each room is shaped around a different way of thinking, with an emphasis on user legibility and throughput.
 </p>
 
 <p align="center">
