@@ -374,6 +374,7 @@ test('OpenAI credentials stay masked, toggle visibility, and persist', async ({ 
 })
 
 test('Interview configuration explains missing Realtime access and keeps drafts', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/interview')
   await page.getByRole('button', { name: /Begin a new interview/ }).click()
 
