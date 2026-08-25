@@ -4,10 +4,13 @@
 
 <h1 align="center">
   Dojo<br>
-  <sub><a href="https://dojo.bingo">dojo.bingo</a></sub>
+  <a href="https://dojo.bingo"><img src="docs/dojo-bingo.svg" alt="dojo.bingo" width="72" height="18"></a>
   <br>
+  <sub>&nbsp;</sub>
 </h1>
 
+<br>
+<sub>&nbsp;</sub>
 <br>
 
 <p>
