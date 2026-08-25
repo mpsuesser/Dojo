@@ -4,11 +4,11 @@
 
 <h1 align="center">Dojo</h1>
 
-<p align="center">
+<p>
   <strong>Specialized interfaces for getting what is in your head into a form that is maximally legible to an agent.</strong>
 </p>
 
-<p align="center">
+<p>
   Dojo treats elicitation as an interface-design problem. Each room is shaped around a different way of thinking, with an emphasis on user legibility and throughput.
 </p>
 
