@@ -2,14 +2,20 @@
   <img src="packages/app/public/icons/dojo-512.png" alt="Dojo" width="168">
 </p>
 
-<h1 align="center">Dojo</h1>
+<h1 align="center">
+  Dojo<br>
+  <sub><a href="https://dojo.bingo">dojo.bingo</a></sub>
+  <br>
+</h1>
+
+<br>
 
 <p>
-  <strong>Specialized interfaces for getting what is in your head into a form that is maximally legible to an agent.</strong>
+  <strong>Dojo is a collection of specialized interfaces for getting what is in your head into a form that is maximally legible to an agent.</strong>
 </p>
 
 <p>
-  Dojo treats elicitation as an interface-design problem. Each room is shaped around a different way of thinking, with an emphasis on user legibility and throughput.
+  It treats elicitation as an interface-design problem. Each room is shaped around a different way of thinking, with an emphasis on user legibility and throughput.
 </p>
 
 <p align="center">
